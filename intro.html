@@ -711,79 +711,320 @@
     </div>
   </section>
 
-  <hr class="divider">
+  <!-- ════════════════════════════════════════
+       PAGE: Cost Analysis
+  ════════════════════════════════════════ -->
+  <div class="page-break">
+    <span class="page-break-num">PAGE 02</span>
+    <div class="page-break-line"></div>
+    <span class="page-break-title">Cost Analysis</span>
+  </div>
 
-  <!-- Category System -->
   <section class="section">
-    <div class="section-label">Category System</div>
-    <h2 class="section-title">4개 재고 카테고리 체계</h2>
-    <p class="section-desc">Fishbowl의 Type 필드를 기반으로 자동 분류됩니다.</p>
+    <div class="section-label">Cost Analysis</div>
+    <h2 class="section-title">월별 원가율 추이 및 품목별 재료비 분석</h2>
+    <p class="section-desc">12개월 재료비 사용 흐름을 원가율·카테고리·전월 대비 증감으로 다각도 분석합니다.</p>
 
-    <div class="cats">
-      <div class="cat">
-        <div class="cat-dot" style="background:#6366f1"></div>
-        <div class="cat-name">Reagent</div>
-        <div class="cat-desc" style="color:#6366f1;font-size:10px;margin-bottom:8px">시약</div>
-        <div class="cat-desc">PCR / ELISA / NGS / STI 진단 시약. Seegene Allplex™ 시리즈, Henry Schein 임상진단 키트 포함.</div>
+    <!-- 원가율 정의 -->
+    <div style="margin-bottom:24px">
+      <div class="ai-col-label" style="margin-bottom:12px">원가율 정의 및 계산 기준</div>
+      <div class="opt-formula">
+        <div class="opt-formula-row">
+          <div class="opt-formula-label">재료비 원가율</div>
+          <div class="opt-formula-val">= 재료비 사용액 ÷ 추정 매출액 × 100
+            <div class="opt-formula-desc">재료비: 기초재고 + 당월입고 − 기말재고 / 매출: 재료비 ÷ 목표 원가율로 역산</div>
+          </div>
+        </div>
+        <div class="opt-formula-row">
+          <div class="opt-formula-label">목표 원가율 (계절성)</div>
+          <div class="opt-formula-val">1월 38.5% → 6월 30.7%(최저) → 12월 38.2%(최고)
+            <div class="opt-formula-desc">Q1·Q4(호흡기·연말): 원가율 높음 / Q2·Q3: 원가율 낮음</div>
+          </div>
+        </div>
+        <div class="opt-formula-row">
+          <div class="opt-formula-label">전월 대비 변동</div>
+          <div class="opt-formula-val">= (당월 원가율 − 전월 원가율) ÷ 전월 원가율 × 100
+            <div class="opt-formula-desc">±3%p 이상이면 경고 표시 / ±30% 이상 변동 품목 자동 탐지</div>
+          </div>
+        </div>
       </div>
-      <div class="cat">
-        <div class="cat-dot" style="background:#10b981"></div>
-        <div class="cat-name">Calibrator</div>
-        <div class="cat-desc" style="color:#10b981;font-size:10px;margin-bottom:8px">캘리브레이터</div>
-        <div class="cat-desc">장비 보정용 물질. Abbott Anti-HCV Calibrator, Bio-Rad HbA1c 등 Abbott/Siemens 장비용.</div>
+    </div>
+
+    <!-- 월별 원가율 시뮬레이션 -->
+    <div style="margin-bottom:24px">
+      <div class="ai-col-label" style="margin-bottom:12px">월별 원가율 추이 (2025년 샘플)</div>
+      <div style="border:1px solid var(--border); padding:24px 20px; background:var(--card);">
+        <div style="display:flex; align-items:flex-end; gap:8px; height:80px; margin-bottom:10px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Jan 38.5%"><div style="background:#6366f1;width:100%;height:77px;opacity:.85"></div><span style="font-size:9px;color:var(--muted)">01</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Feb 37.2%"><div style="background:#6366f1;width:100%;height:74px;opacity:.85"></div><span style="font-size:9px;color:var(--muted)">02</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Mar 35.6%"><div style="background:#6366f1;width:100%;height:71px;opacity:.85"></div><span style="font-size:9px;color:var(--muted)">03</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Apr 33.1%"><div style="background:#22d3ee;width:100%;height:66px;opacity:.85"></div><span style="font-size:9px;color:var(--muted)">04</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="May 31.8%"><div style="background:#22d3ee;width:100%;height:63px;opacity:.85"></div><span style="font-size:9px;color:var(--muted)">05</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Jun 30.7%"><div style="background:#34d399;width:100%;height:61px;opacity:.9"></div><span style="font-size:9px;color:var(--muted)">06</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Jul 31.5%"><div style="background:#22d3ee;width:100%;height:63px;opacity:.85"></div><span style="font-size:9px;color:var(--muted)">07</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Aug 32.8%"><div style="background:#22d3ee;width:100%;height:65px;opacity:.85"></div><span style="font-size:9px;color:var(--muted)">08</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Sep 34.1%"><div style="background:#6366f1;width:100%;height:68px;opacity:.75"></div><span style="font-size:9px;color:var(--muted)">09</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Oct 35.2%"><div style="background:#6366f1;width:100%;height:70px;opacity:.8"></div><span style="font-size:9px;color:var(--muted)">10</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Nov 36.8%"><div style="background:#f59e0b;width:100%;height:73px;opacity:.85"></div><span style="font-size:9px;color:var(--muted)">11</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1" title="Dec 36.2%"><div style="background:#f87171;width:100%;height:72px;opacity:.9;position:relative"><span style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:#f87171;white-space:nowrap;font-weight:700">36.2%</span></div><span style="font-size:9px;color:var(--muted)">12</span></div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><span style="width:10px;height:10px;background:#34d399;display:inline-block"></span>낮음 (≤31%)</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><span style="width:10px;height:10px;background:#22d3ee;display:inline-block"></span>정상 (31~35%)</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><span style="width:10px;height:10px;background:#6366f1;display:inline-block"></span>주의 (35~38%)</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><span style="width:10px;height:10px;background:#f59e0b;display:inline-block"></span>경고 (38%↑)</div>
+        </div>
       </div>
-      <div class="cat">
-        <div class="cat-dot" style="background:#f59e0b"></div>
-        <div class="cat-name">Control (QC)</div>
-        <div class="cat-desc" style="color:#f59e0b;font-size:10px;margin-bottom:8px">정도관리 물질</div>
-        <div class="cat-desc">Roche Multi-Chemistry QC, Seegene Positive Control 등 정도관리 물질 전체.</div>
+    </div>
+
+    <!-- 카테고리별 재료비 + 전월대비 변동 -->
+    <div class="ai-two-col">
+      <div>
+        <div class="ai-col-label" style="margin-bottom:12px">카테고리별 재료비 구성 (2025-12)</div>
+        <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)">
+            <span style="width:10px;height:10px;background:#6366f1;flex-shrink:0"></span>
+            <span style="font-size:13px;flex:1">Reagent</span>
+            <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#e2e8f0">₩4.8억</span>
+            <span style="font-size:11px;color:#4b5a7a;width:36px;text-align:right">78%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)">
+            <span style="width:10px;height:10px;background:#10b981;flex-shrink:0"></span>
+            <span style="font-size:13px;flex:1">Calibrator</span>
+            <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#e2e8f0">₩634만</span>
+            <span style="font-size:11px;color:#4b5a7a;width:36px;text-align:right">10%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)">
+            <span style="width:10px;height:10px;background:#f59e0b;flex-shrink:0"></span>
+            <span style="font-size:13px;flex:1">Control (QC)</span>
+            <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#e2e8f0">₩750만</span>
+            <span style="font-size:11px;color:#4b5a7a;width:36px;text-align:right">7%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 18px">
+            <span style="width:10px;height:10px;background:#22d3ee;flex-shrink:0"></span>
+            <span style="font-size:13px;flex:1">Consumables</span>
+            <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:#e2e8f0">₩316만</span>
+            <span style="font-size:11px;color:#4b5a7a;width:36px;text-align:right">5%</span>
+          </div>
+        </div>
       </div>
-      <div class="cat">
-        <div class="cat-dot" style="background:#22d3ee"></div>
-        <div class="cat-name">Consumables</div>
-        <div class="cat-desc" style="color:#22d3ee;font-size:10px;margin-bottom:8px">소모품</div>
-        <div class="cat-desc">BD 채혈관, 주사침, Sharps Container 등 검사 소모품 및 Lab supplies 전체.</div>
+
+      <div>
+        <div class="ai-col-label" style="margin-bottom:12px">전월 대비 주요 증감 품목 (⚠ ±30% 이상)</div>
+        <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border)">
+          <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#e2e8f0">Allplex™ STI Essential Panel</div>
+              <div style="font-size:11px;color:#4b5a7a">SG-001 · Seegene B2C</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700;color:#f87171">+45.2%</div>
+              <div style="font-size:10px;color:#4b5a7a">⚠ 30%↑</div>
+            </div>
+          </div>
+          <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#e2e8f0">Allplex™ HPV HR Detection</div>
+              <div style="font-size:11px;color:#4b5a7a">SG-006 · Seegene B2C</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700;color:#f87171">+38.9%</div>
+              <div style="font-size:10px;color:#4b5a7a">⚠ 30%↑</div>
+            </div>
+          </div>
+          <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#e2e8f0">Troponin I HS Assay Kit</div>
+              <div style="font-size:11px;color:#4b5a7a">HS-010 · Henry Schein B2B</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700;color:#f87171">+21.1%</div>
+              <div style="font-size:10px;color:#4b5a7a">단가 인상</div>
+            </div>
+          </div>
+          <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#e2e8f0">Vitamin D (25-OH) Total</div>
+              <div style="font-size:11px;color:#4b5a7a">HS-009 · Henry Schein B2B</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700;color:#f87171">+38.5%</div>
+              <div style="font-size:10px;color:#4b5a7a">⚠ 30%↑</div>
+            </div>
+          </div>
+          <div style="padding:10px 18px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#e2e8f0">Pipette Tips 200ul</div>
+              <div style="font-size:11px;color:#4b5a7a">CS-003 · LabSupply B2B</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700;color:#34d399">-34.1%</div>
+              <div style="font-size:10px;color:#4b5a7a">⚠ 30%↓</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <hr class="divider">
 
-  <!-- Tech -->
-  <section class="section" style="padding-bottom:0">
-    <div class="section-label">Technology</div>
-    <h2 class="section-title">기술 스택</h2>
-    <p class="section-desc" style="margin-bottom:24px">별도 서버 없이 브라우저만으로 실행되는 순수 프론트엔드 애플리케이션.</p>
+  <!-- ════════════════════════════════════════
+       PAGE: B2B / B2C Analysis
+  ════════════════════════════════════════ -->
+  <div class="page-break">
+    <span class="page-break-num">PAGE 03</span>
+    <div class="page-break-line"></div>
+    <span class="page-break-title">B2B / B2C Analysis</span>
+  </div>
 
-    <div class="tech">
-      <div class="tech-item">
-        <div class="tech-name">React 19 + Vite</div>
-        <div class="tech-role">UI 프레임워크 / 빌드</div>
+  <section class="section">
+    <div class="section-label">B2B / B2C Analysis</div>
+    <h2 class="section-title">판매 채널별 재료비 구성 분석</h2>
+    <p class="section-desc">Henry Schein 공급 B2B 임상진단 시약과 Seegene 공급 B2C STI 시약의 채널별 원가 구조를 비교합니다.</p>
+
+    <!-- 채널 개요 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);margin-bottom:24px">
+      <div style="padding:28px;border-right:1px solid var(--border)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#f59e0b;margin-bottom:12px">B2B · 기관 판매</div>
+        <div style="font-size:28px;font-weight:700;letter-spacing:-.04em;color:#f59e0b;font-variant-numeric:tabular-nums;margin-bottom:6px">₩4.4억 <span style="font-size:14px;font-weight:400;color:#4b5a7a">72%</span></div>
+        <div style="font-size:12px;color:#4b5a7a;margin-bottom:16px">병원·검사기관·연구소 직접 공급</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:12px;color:#7a8bb5">🏥 병원·클리닉 Henry Schein 임상진단</div>
+          <div style="font-size:12px;color:#7a8bb5">🔬 연구기관 분자진단 시약</div>
+          <div style="font-size:12px;color:#7a8bb5">🧪 검사실 Calibrator / Control</div>
+          <div style="font-size:12px;color:#7a8bb5">📦 Lab 소모품 (BD 채혈관 등)</div>
+        </div>
       </div>
-      <div class="tech-item">
-        <div class="tech-name">Tailwind CSS v4</div>
-        <div class="tech-role">스타일링</div>
+      <div style="padding:28px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#f43f5e;margin-bottom:12px">B2C · 개인/의원 판매</div>
+        <div style="font-size:28px;font-weight:700;letter-spacing:-.04em;color:#f43f5e;font-variant-numeric:tabular-nums;margin-bottom:6px">₩1.7억 <span style="font-size:14px;font-weight:400;color:#4b5a7a">28%</span></div>
+        <div style="font-size:12px;color:#4b5a7a;margin-bottom:16px">의원·산부인과·비뇨기과 직접 공급</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:12px;color:#7a8bb5">🦠 STI 패널 (CT/NG, HPV, HSV)</div>
+          <div style="font-size:12px;color:#7a8bb5">🔍 Seegene Allplex™ 진단 시약</div>
+          <div style="font-size:12px;color:#7a8bb5">💊 HBV/HCV/HIV 정량 검사</div>
+          <div style="font-size:12px;color:#7a8bb5">✅ QC Control (Positive/IC Set)</div>
+        </div>
       </div>
-      <div class="tech-item">
-        <div class="tech-name">Recharts</div>
-        <div class="tech-role">차트 / 데이터 시각화</div>
+    </div>
+
+    <!-- 월별 채널 추이 바 -->
+    <div style="margin-bottom:24px">
+      <div class="ai-col-label" style="margin-bottom:12px">월별 B2B / B2C 재료비 추이 (만원)</div>
+      <div style="border:1px solid var(--border);padding:24px 20px;background:var(--card)">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:10px;font-size:11px">
+            <span style="color:var(--muted);width:20px">01</span>
+            <div style="flex:1;display:flex;gap:2px;height:16px">
+              <div style="background:#f59e0b;width:68%;opacity:.8;display:flex;align-items:center;justify-content:flex-end;padding-right:6px"><span style="font-size:9px;color:#fff">B2B</span></div>
+              <div style="background:#f43f5e;width:32%;opacity:.8"></div>
+            </div>
+            <span style="color:var(--muted);width:36px;text-align:right">38.5%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:11px">
+            <span style="color:var(--muted);width:20px">04</span>
+            <div style="flex:1;display:flex;gap:2px;height:16px">
+              <div style="background:#f59e0b;width:65%;opacity:.7"></div>
+              <div style="background:#f43f5e;width:35%;opacity:.8"></div>
+            </div>
+            <span style="color:var(--muted);width:36px;text-align:right">33.1%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:11px">
+            <span style="color:var(--muted);width:20px">06</span>
+            <div style="flex:1;display:flex;gap:2px;height:16px">
+              <div style="background:#f59e0b;width:62%;opacity:.65"></div>
+              <div style="background:#f43f5e;width:38%;opacity:.8"></div>
+            </div>
+            <span style="color:var(--muted);width:36px;text-align:right">30.7%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:11px">
+            <span style="color:var(--muted);width:20px">09</span>
+            <div style="flex:1;display:flex;gap:2px;height:16px">
+              <div style="background:#f59e0b;width:70%;opacity:.75"></div>
+              <div style="background:#f43f5e;width:30%;opacity:.8"></div>
+            </div>
+            <span style="color:var(--muted);width:36px;text-align:right">34.1%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:11px">
+            <span style="color:var(--muted);width:20px;font-weight:700;color:#e2e8f0">12</span>
+            <div style="flex:1;display:flex;gap:2px;height:20px">
+              <div style="background:#f59e0b;width:72%;opacity:.9;display:flex;align-items:center;justify-content:center"><span style="font-size:9px;color:#fff;font-weight:600">72%</span></div>
+              <div style="background:#f43f5e;width:28%;opacity:.9;display:flex;align-items:center;justify-content:center"><span style="font-size:9px;color:#fff;font-weight:600">28%</span></div>
+            </div>
+            <span style="color:#f87171;width:36px;text-align:right;font-weight:700">36.2%</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><span style="width:10px;height:10px;background:#f59e0b;display:inline-block"></span>B2B (Henry Schein)</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><span style="width:10px;height:10px;background:#f43f5e;display:inline-block"></span>B2C (Seegene STI)</div>
+        </div>
       </div>
-      <div class="tech-item">
-        <div class="tech-name">SheetJS (xlsx)</div>
-        <div class="tech-role">Excel 파싱 / 생성</div>
+    </div>
+
+    <!-- 채널별 주요 품목 TOP 5 -->
+    <div class="ai-two-col">
+      <div>
+        <div class="ai-col-label" style="margin-bottom:12px">B2B 주요 품목 TOP 5 (2025-12)</div>
+        <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border)">
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">D-Dimer Quantitative</div><div style="font-size:10px;color:#4b5a7a">HS-012 · Henry Schein</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f59e0b;flex-shrink:0;font-variant-numeric:tabular-nums">₩1,981만</div>
+          </div>
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">NT-proBNP Immunoassay Kit</div><div style="font-size:10px;color:#4b5a7a">HS-011 · Henry Schein</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f59e0b;flex-shrink:0;font-variant-numeric:tabular-nums">₩1,794만</div>
+          </div>
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CBC 5-Part Differential Pack</div><div style="font-size:10px;color:#4b5a7a">HS-020 · Henry Schein</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f59e0b;flex-shrink:0;font-variant-numeric:tabular-nums">₩1,685만</div>
+          </div>
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Troponin I HS Assay Kit</div><div style="font-size:10px;color:#4b5a7a">HS-010 · Henry Schein</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f59e0b;flex-shrink:0;font-variant-numeric:tabular-nums">₩1,598만</div>
+          </div>
+          <div style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Vitamin D (25-OH) Total</div><div style="font-size:10px;color:#4b5a7a">HS-009 · Henry Schein</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f59e0b;flex-shrink:0;font-variant-numeric:tabular-nums">₩1,589만</div>
+          </div>
+        </div>
       </div>
-      <div class="tech-item">
-        <div class="tech-name">GitHub Pages</div>
-        <div class="tech-role">무료 배포 / CDN</div>
+
+      <div>
+        <div class="ai-col-label" style="margin-bottom:12px">B2C 주요 품목 TOP 5 (2025-12)</div>
+        <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border)">
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Allplex™ STI Essential Panel</div><div style="font-size:10px;color:#4b5a7a">SG-001 · Seegene</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f43f5e;flex-shrink:0;font-variant-numeric:tabular-nums">₩712만</div>
+          </div>
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Allplex™ HPV HR Detection</div><div style="font-size:10px;color:#4b5a7a">SG-006 · Seegene</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f43f5e;flex-shrink:0;font-variant-numeric:tabular-nums">₩567만</div>
+          </div>
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Allplex™ STI Master Panel</div><div style="font-size:10px;color:#4b5a7a">SG-002 · Seegene</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f43f5e;flex-shrink:0;font-variant-numeric:tabular-nums">₩498만</div>
+          </div>
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Allplex™ CT/NG Assay</div><div style="font-size:10px;color:#4b5a7a">SG-004 · Seegene</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f43f5e;flex-shrink:0;font-variant-numeric:tabular-nums">₩412만</div>
+          </div>
+          <div style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0"><div style="font-size:12px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Allplex™ HBV Assay</div><div style="font-size:10px;color:#4b5a7a">SG-016 · Seegene</div></div>
+            <div style="font-size:13px;font-weight:700;color:#f43f5e;flex-shrink:0;font-variant-numeric:tabular-nums">₩289만</div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
+
+  <hr class="divider">
 
   <!-- ════════════════════════════════════════
        PAGE: AI Commentary
   ════════════════════════════════════════ -->
   <div class="page-break">
-    <span class="page-break-num">PAGE 02</span>
+    <span class="page-break-num">PAGE 04</span>
     <div class="page-break-line"></div>
     <span class="page-break-title">AI Commentary</span>
     <span class="page-break-badge">AI</span>
@@ -898,7 +1139,7 @@ Henry Schein B2B 20종 + Seegene STI B2C 20종 포함 전체 252개 SKU 재고�
        PAGE: Inventory Optimization
   ════════════════════════════════════════ -->
   <div class="page-break">
-    <span class="page-break-num">PAGE 03</span>
+    <span class="page-break-num">PAGE 06</span>
     <div class="page-break-line"></div>
     <span class="page-break-title">Inventory Optimization</span>
     <span class="page-break-badge">AI</span>

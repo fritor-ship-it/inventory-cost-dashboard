@@ -119,7 +119,7 @@ export default function UploadModal({ onClose, targetMonth }) {
               {targetMonth ? `${targetMonth} 기준월 데이터 업로드` : '양식 다운로드 → 작성 → 업로드 → 분석'}
             </p>
           </div>
-          <button onClick={onClose} className="text-[#4b5a7a] hover:text-white p-1.5 rounded-lg hover:bg-[#1a2235] transition-colors">
+          <button type="button" onClick={onClose} className="text-[#4b5a7a] hover:text-white p-1.5 rounded-lg hover:bg-[#1a2235] transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -146,7 +146,8 @@ export default function UploadModal({ onClose, targetMonth }) {
                     </div>
                   </div>
                   <button
-                    onClick={downloadFn}
+                    type="button"
+                    onClick={e => { e.stopPropagation(); downloadFn(); }}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all ${cc.btn}`}
                   >
                     <Download size={11} /> 양식
@@ -167,7 +168,6 @@ export default function UploadModal({ onClose, targetMonth }) {
                     accept=".xlsx,.xls,.csv"
                     className="hidden"
                     onChange={e => { handleFile(id, e.target.files[0]); e.target.value = ''; }}
-                    onClick={e => e.stopPropagation()}
                   />
 
                   {file ? (
@@ -234,6 +234,7 @@ export default function UploadModal({ onClose, targetMonth }) {
 
           {/* 분석 시작 버튼 */}
           <button
+            type="button"
             onClick={handleProcess}
             disabled={!allUploaded || status === 'processing' || status === 'done'}
             className={`w-full py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
@@ -261,6 +262,7 @@ export default function UploadModal({ onClose, targetMonth }) {
           {/* 샘플 데이터로 초기화 */}
           {!data.isDemo && (
             <button
+              type="button"
               onClick={handleReset}
               className="w-full py-2 rounded-xl text-xs font-medium text-[#4b5a7a] hover:text-white bg-[#1a2235] hover:bg-[#1e2a42] transition-colors flex items-center justify-center gap-1.5"
             >

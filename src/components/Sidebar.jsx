@@ -38,7 +38,7 @@ function DownloadMenu({ onDownload }) {
     { section: '📋 양식 (Template)', list: [
       { label: '전체 양식 한번에 (5개)', key: 'all',      accent: true },
       { label: 'QuickBooks 양식',        key: 'qb' },
-      { label: 'Fishbowl 양식',          key: 'fishbowl' },
+      { label: 'Fishbowl 재고대장 양식',  key: 'fishbowl' },
       { label: '월말 실사 재고표 양식',  key: 'physical' },
       { label: 'SKU Master 양식',        key: 'sku' },
       { label: 'Cost Category 양식',     key: 'cost' },

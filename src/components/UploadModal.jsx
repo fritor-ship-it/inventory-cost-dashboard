@@ -15,8 +15,8 @@ const FILE_DEFS = [
     color: 'emerald', downloadFn: downloadQBTemplate,
   },
   {
-    id: 'fishbowl', required: true,  label: 'Fishbowl Inventory Export',
-    desc: 'SKU·입고수량·단가·현재고수량·금액',
+    id: 'fishbowl', required: true,  label: 'Fishbowl 재고대장 (Inventory Valuation Summary)',
+    desc: 'Item Name · SKU · Qty · Unit Cost · Asset Value · Type · B2B/B2C',
     color: 'blue', downloadFn: downloadFishbowlTemplate,
   },
   {

@@ -25,16 +25,77 @@ export function downloadQBTemplate() {
 }
 
 export function downloadFishbowlTemplate() {
-  const headers = ['날짜(Date)', 'SKU', '품목명(Item Name)', '입고수량', '단가', '입고금액', '현재고수량', '현재고금액'];
-  const rows = [
-    ['2025-12-31', 'RG-001', 'PCR Master Mix', 10, 45000, 450000, 15, 675000],
-    ['2025-12-31', 'RG-002', 'RNA Extraction Kit', 5, 62000, 310000, 8, 496000],
-    ['2025-12-31', 'CS-001', 'Microcentrifuge Tubes 1.5ml', 200, 150, 30000, 320, 48000],
-  ];
-  const ws = makeSheet(headers, rows, [14, 10, 26, 10, 10, 12, 12, 14]);
+  // Fishbowl Inventory Valuation Summary 실제 양식과 동일한 형식
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Fishbowl_Inventory');
-  download(wb, 'Fishbowl_양식.xlsx');
+
+  // ── 재고대장 시트 ──
+  const titleRow   = ['Inventory Valuation Summary', null, null, null, null, null, null, null, null, null, null, null];
+  const dateRow    = [new Date(), null, null, null, null, null, null, null, null, null, null, null];
+  const emptyRow   = [null, null, null, null, null, null, null, null, null, null, null, null];
+  const headerRow  = ['Item Name','Item Description','Item SKU','Qty','UOM','Unit Cost','Asset Value','Item Tags','Department','Notes','Type','B2B/B2C'];
+  const sampleRows = [
+    ['Anti-HCV Calibrator',            'Abbott',        '1L79-01',  2,  'Each', 253.99, 507.98,   'Architect i2000SR ||| Henry Schein', 'Core',  null, 'Calibrator',            'B2B'],
+    ['Anti-Tg Calibrator',             'Abbott',        '2K46-01',  2,  'Each', 253.99, 507.98,   'Architect i2000SR ||| Henry Schein', 'Core',  null, 'Calibrator',            'B2B'],
+    ['AUSAB Calibrator',               'Abbott',        '1L82-02',  2,  'Each', 253.99, 507.98,   'Architect i2000SR ||| Henry Schein', 'Core',  null, 'Calibrator',            'B2B'],
+    ['Allplex™ STI Essential Panel',   'Seegene',       'SG-001',   5,  'Kit',  380.00, 1900.00,  'STI Panel ||| Seegene Inc.',        'Core',  null, 'Reagent',               'B2C'],
+    ['Allplex™ HPV HR Detection',      'Seegene',       'SG-006',   3,  'Kit',  350.00, 1050.00,  'HPV Panel ||| Seegene Inc.',        'Core',  null, 'Reagent',               'B2C'],
+    ['Troponin I HS Kit',              'Henry Schein',  'HS-010',   2,  'Kit', 2240.00, 4480.00,  'Troponin ||| Henry Schein',         'Core',  null, 'Reagent',               'B2B'],
+    ['Multi-Chemistry QC (3 levels)',  'Henry Schein',  'HS-026',   1,  'Set',  320.00,  320.00,  'QC Material ||| Henry Schein',      'Core',  null, 'Control (QC Material)', 'B2B'],
+    ['CBC 5-Part Calibrator',          'Henry Schein',  'HS-025',   1,  'Set',  450.00,  450.00,  'Calibrator ||| Henry Schein',       'Core',  null, 'Calibrator',            'B2B'],
+    ['Pipette Tips 200ul',             'TipMaster',     'CS-003',  500, 'Pack',   0.15,   75.00,  'Consumables ||| TipMaster',         'Lab',   null, 'Consumables',           'B2C'],
+    ['Microcentrifuge Tubes 1.5ml',    'LabSupply',     'CS-001',  200, 'Pack',   0.15,   30.00,  'Consumables ||| LabSupply',         'Lab',   null, 'Consumables',           'B2B'],
+  ];
+
+  // 소계 행
+  const totalAssets = sampleRows.reduce((s, r) => s + (r[6] || 0), 0);
+  const summaryRows = [
+    [null, null, null, null, 'Total Assets Value', null, totalAssets, null, null, null, null, null],
+    [null, null, null, null, null, null, null, 'Category', null, 'Amount', null, null],
+    [null, null, null, null, null, null, null, 'Inventory - Reagent', 'B2B', sampleRows.filter(r=>r[10]==='Reagent'&&r[11]==='B2B').reduce((s,r)=>s+r[6],0), null, null],
+    [null, null, null, null, null, null, null, 'Inventory - Reagent', 'B2C', sampleRows.filter(r=>r[10]==='Reagent'&&r[11]==='B2C').reduce((s,r)=>s+r[6],0), null, null],
+    [null, null, null, null, null, null, null, 'Inventory - Calibrator', 'B2B', sampleRows.filter(r=>r[10]==='Calibrator').reduce((s,r)=>s+r[6],0), null, null],
+    [null, null, null, null, null, null, null, 'Inventory - Control (QC)', 'B2B', sampleRows.filter(r=>r[10]==='Control (QC Material)').reduce((s,r)=>s+r[6],0), null, null],
+    [null, null, null, null, null, null, null, 'Inventory - Consumables', 'B2B', sampleRows.filter(r=>r[10]==='Consumables').reduce((s,r)=>s+r[6],0), null, null],
+    [null, null, null, null, null, null, null, 'Total', null, totalAssets, null, null],
+  ];
+
+  const allRows = [titleRow, dateRow, emptyRow, headerRow, ...sampleRows, ...summaryRows];
+  const ws = XLSX.utils.aoa_to_sheet(allRows);
+  ws['!cols'] = [28, 18, 12, 8, 8, 12, 14, 34, 10, 14, 24, 10].map(w => ({ wch: w }));
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Inventory Valuation Summary');
+
+  // ── 작성 가이드 시트 ──
+  const guide = XLSX.utils.aoa_to_sheet([
+    ['【Fishbowl 재고대장 작성 가이드】'],
+    [],
+    ['열(Column)', '내용', '예시', '필수'],
+    ['Item Name',        '품목명',                 'Anti-HCV Calibrator',       '필수'],
+    ['Item Description', '공급업체(Vendor)',        'Abbott',                    '권장'],
+    ['Item SKU',         'SKU 코드',               '1L79-01',                   '필수'],
+    ['Qty',              '현재 보유 수량',          '2',                         '필수'],
+    ['UOM',              '단위',                   'Each / Kit / Pack / Set',   '권장'],
+    ['Unit Cost',        '단가 (USD)',              '253.99',                    '필수'],
+    ['Asset Value',      '재고금액 (USD, Qty×Cost)','507.98',                   '자동계산'],
+    ['Item Tags',        '장비명 ||| 공급사',       'Architect i2000SR ||| Henry Schein', '권장'],
+    ['Department',       '부서',                   'Core / Lab',               '선택'],
+    ['Notes',            '비고',                   '',                          '선택'],
+    ['Type',             '품목 구분',              'Reagent / Calibrator / Control (QC Material) / Consumables', '필수'],
+    ['B2B/B2C',          '채널',                   'B2B / B2C',                '필수'],
+    [],
+    ['【주의사항】'],
+    ['- Row 1: "Inventory Valuation Summary" 고정'],
+    ['- Row 2: 보고 기준일 (YYYY-MM-DD)'],
+    ['- Row 3: 빈 행'],
+    ['- Row 4: 헤더 행 (위 컬럼명과 동일하게)'],
+    ['- Row 5~: 데이터 행 (Item SKU가 있는 행만 처리)'],
+    ['- 금액 단위: USD (시스템이 자동으로 KRW 환산 적용)'],
+    ['- 환율: 기본 1,350원/USD (Settings에서 변경 가능)'],
+  ]);
+  guide['!cols'] = [24, 24, 40, 10].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, guide, '작성_가이드');
+
+  download(wb, 'Fishbowl_재고대장_양식.xlsx');
 }
 
 export function downloadPhysicalTemplate() {

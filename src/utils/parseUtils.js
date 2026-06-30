@@ -62,17 +62,94 @@ export async function parseQB(file) {
 export async function parseFishbowl(file) {
   const rows = await readSheet(file);
   if (rows.length < 2) throw new Error('Fishbowl 파일에 데이터가 없습니다.');
+
+  // ── Fishbowl Inventory Valuation Summary 형식 자동 감지 ──
+  const title = toStr(rows[0]?.[0]);
+  if (title.toLowerCase().includes('inventory valuation summary')) {
+    return parseFishbowlIVS(rows);
+  }
+
+  // ── 레거시 형식 (날짜·SKU·품목명·입고수량...) ──
   const data = rows.slice(1).filter(r => r[0]);
   return data.map(r => ({
     month: parseDate(r[0]),
     sku: toStr(r[1]),
     name: toStr(r[2]),
+    vendor: '',
+    category: 'Reagent',
+    channel: 'B2B',
     receiptQty: toNum(r[3]),
+    unitCostUSD: 0,
     unitCost: toNum(r[4]),
     receiptAmount: toNum(r[5]),
     stockQty: toNum(r[6]),
     stockValue: toNum(r[7]),
+    closingQty: toNum(r[6]),
+    closingValue: toNum(r[7]),
+    department: '',
+    itemTags: '',
   })).filter(r => r.month && r.sku);
+}
+
+// ── Fishbowl IVS 전용 파서 ─────────────────────────────────────────
+// 형식: Row1=제목, Row2=날짜, Row3=빈행, Row4=헤더, Row5+=데이터
+function parseFishbowlIVS(rows, exchangeRate = 1350) {
+  // 보고 기준일 추출 (Row 2)
+  const reportDate = rows[1]?.[0];
+  const reportMonth = parseDate(reportDate) || '';
+
+  // 헤더 찾기 (Item Name이 있는 행)
+  let headerIdx = 3;
+  for (let i = 0; i < rows.length; i++) {
+    if (toStr(rows[i]?.[0]).toLowerCase() === 'item name') { headerIdx = i; break; }
+  }
+
+  // 데이터 행: Item SKU(col C, index 2)가 있는 행만
+  const dataRows = rows.slice(headerIdx + 1).filter(r => r[2] && toStr(r[2]).trim());
+
+  return dataRows.map(r => {
+    const qty       = toNum(r[3]);
+    const unitCostUSD = toNum(r[5]);
+    const assetUSD  = toNum(r[6]) || qty * unitCostUSD;
+    const unitCostKRW  = unitCostUSD * exchangeRate;
+    const assetKRW  = assetUSD * exchangeRate;
+
+    // Type → 4개 카테고리 매핑
+    const rawType = toStr(r[10]);
+    const category = parseCategory(rawType);
+
+    // Vendor: Item Description (col B) 우선, Item Tags에서 추출
+    const vendor = toStr(r[1]) || extractVendorFromTags(toStr(r[7]));
+
+    return {
+      month:       reportMonth,
+      sku:         toStr(r[2]),
+      name:        toStr(r[0]),
+      vendor,
+      category,
+      channel:     toStr(r[11]).toUpperCase().includes('B2B') ? 'B2B' : 'B2C',
+      department:  toStr(r[8]),
+      itemTags:    toStr(r[7]),
+      notes:       toStr(r[9]),
+      uom:         toStr(r[4]),
+      unitCostUSD,
+      unitCost:    unitCostKRW,
+      stockQty:    qty,
+      stockValue:  assetKRW,
+      // 기말재고 (현재 보유)
+      closingQty:  qty,
+      closingValue:assetKRW,
+      // 입고 데이터 없음 (IVS는 스냅샷)
+      receiptQty: 0,
+      receiptAmount: 0,
+    };
+  }).filter(r => r.sku);
+}
+
+function extractVendorFromTags(tags) {
+  if (!tags) return '';
+  const parts = tags.split('|||');
+  return parts.length > 1 ? parts[parts.length - 1].trim() : '';
 }
 
 export async function parsePhysical(file) {
@@ -202,7 +279,24 @@ export async function processUploadedFiles(files) {
     parseCostCategory(files.cost || null),
   ]);
 
-  if (skuRaw.length === 0) throw new Error('SKU Master 파일에 유효한 데이터가 없습니다. 양식을 확인해 주세요.');
+  // Fishbowl IVS 파일이면 SKU Master 자동 생성 가능
+  const isFishbowlIVS = fbRaw.length > 0 && fbRaw[0].category !== undefined;
+  let finalSku = skuRaw;
+  if (finalSku.length === 0 && isFishbowlIVS) {
+    // Fishbowl IVS 데이터로 SKU Master 자동 구성
+    const seen = new Set();
+    finalSku = fbRaw.filter(r => {
+      if (seen.has(r.sku)) return false;
+      seen.add(r.sku);
+      return true;
+    }).map(r => ({
+      sku: r.sku, name: r.name, category: r.category,
+      channel: r.channel, vendor: r.vendor, unit: r.uom || '',
+    }));
+    if (finalSku.length === 0) throw new Error('SKU Master 파일에 유효한 데이터가 없습니다. 양식을 확인해 주세요.');
+  } else if (finalSku.length === 0) {
+    throw new Error('SKU Master 파일에 유효한 데이터가 없습니다. 양식을 확인해 주세요.');
+  }
 
   // 월 목록
   const monthSet = new Set([
@@ -237,11 +331,33 @@ export async function processUploadedFiles(files) {
     physBySkuMonth[r.sku][r.month] = r;
   });
 
+  // Fishbowl IVS: 기말재고를 physBySkuMonth에 자동 반영
+  if (isFishbowlIVS && fbRaw.length > 0) {
+    const fbMonth = fbRaw[0].month;
+    if (fbMonth) {
+      fbRaw.forEach(r => {
+        if (!physBySkuMonth[r.sku]) physBySkuMonth[r.sku] = {};
+        if (!physBySkuMonth[r.sku][fbMonth]) {
+          physBySkuMonth[r.sku][fbMonth] = {
+            month: fbMonth, sku: r.sku, name: r.name,
+            openingQty: 0, openingValue: 0,
+            closingQty: r.closingQty,
+            closingValue: r.closingValue,
+            notes: r.notes || '',
+          };
+        }
+      });
+      // IVS 월이 months 목록에 없으면 추가
+      if (!months.includes(fbMonth)) months.push(fbMonth);
+      months.sort();
+    }
+  }
+
   // 재고수불부 생성
   const inventoryData = {};
   const inventoryBySkuMonth = {};
 
-  skuRaw.forEach(s => {
+  finalSku.forEach(s => {
     inventoryData[s.sku] = months.map(month => {
       const phys = physBySkuMonth[s.sku]?.[month] || {};
       const qbAmt = qbBySkuMonth[s.sku]?.[month] || 0;
@@ -275,7 +391,7 @@ export async function processUploadedFiles(files) {
     let b2bUsage=0, b2cUsage=0;
     let reagentOnly=0, calibratorUsage=0, controlUsage=0, consumablesUsage=0;
 
-    skuRaw.forEach(s => {
+    finalSku.forEach(s => {
       const row = inventoryBySkuMonth[s.sku]?.[month];
       if (!row) return;
       totalOpening   += row.openingValue;
@@ -283,10 +399,11 @@ export async function processUploadedFiles(files) {
       totalClosing   += row.closingValue;
       totalUsage     += row.usageValue;
       if (s.channel === 'B2B') b2bUsage += row.usageValue; else b2cUsage += row.usageValue;
-      if      (s.category === 'Reagent')               reagentOnly      += row.usageValue;
-      else if (s.category === 'Calibrator')            calibratorUsage  += row.usageValue;
-      else if (s.category === 'Control (QC Material)') controlUsage     += row.usageValue;
-      else                                             consumablesUsage += row.usageValue;
+      const cat = s.category;
+      if      (cat === 'Reagent')               reagentOnly      += row.usageValue;
+      else if (cat === 'Calibrator')            calibratorUsage  += row.usageValue;
+      else if (cat === 'Control (QC Material)') controlUsage     += row.usageValue;
+      else                                      consumablesUsage += row.usageValue;
     });
 
     // 하위 호환 필드
@@ -317,10 +434,10 @@ export async function processUploadedFiles(files) {
       ? parseFloat(((cur - prev) / prev * 100).toFixed(2)) : 0;
   }
 
-  const exceptions = detectExceptions(skuRaw, inventoryBySkuMonth, qbBySkuMonth, fbBySkuMonth, months);
+  const exceptions = detectExceptions(finalSku, inventoryBySkuMonth, qbBySkuMonth, fbBySkuMonth, months);
 
   return {
-    skuMaster: skuRaw,
+    skuMaster: finalSku,
     costCategories: costRaw,
     inventoryData,
     monthlySummary,

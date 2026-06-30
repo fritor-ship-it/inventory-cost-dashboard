@@ -10,6 +10,7 @@ import InventoryOptTab from './tabs/InventoryOptTab';
 import ReagentTab from './tabs/ReagentTab';
 import ExceptionTab from './tabs/ExceptionTab';
 import AITab from './tabs/AITab';
+import IntroTab from './tabs/IntroTab';
 import SettingsTab from './tabs/SettingsTab';
 import { DataProvider, useData } from './context/DataContext';
 import {
@@ -20,6 +21,7 @@ import { exportInventoryLedger, exportCostAnalysis, exportExceptions } from './u
 
 const TAB_COMPONENTS = {
   dashboard:    DashboardTab,
+  intro:        IntroTab,
   ledger:       LedgerTab,
   'sku-mapping':SKUMappingTab,
   'inv-optim':  InventoryOptTab,

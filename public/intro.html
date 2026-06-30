@@ -1,0 +1,648 @@
+<title>재고/원가관리 AI 대시보드 — 소개</title>
+<meta name="description" content="QuickBooks·Fishbowl 기반 월별 재고수불부·원가분석 자동화 시스템 소개자료">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0d14;
+    --surface:  #111520;
+    --card:     #141925;
+    --border:   #1d2538;
+    --border2:  #253050;
+    --indigo:   #6366f1;
+    --cyan:     #22d3ee;
+    --emerald:  #34d399;
+    --amber:    #f59e0b;
+    --rose:     #f87171;
+    --text:     #e2e8f0;
+    --muted:    #4b5a7a;
+    --subtle:   #2a3555;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Layout ── */
+  .page { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* ── Top bar ── */
+  .topbar {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 700; color: #fff; letter-spacing: -.5px;
+  }
+  .logo-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .logo-sub  { font-size: 11px; color: var(--muted); }
+  .topbar-link {
+    font-size: 12px; color: var(--indigo); text-decoration: none;
+    border: 1px solid #3b3f8c; padding: 5px 14px; border-radius: 4px;
+    transition: background .15s;
+  }
+  .topbar-link:hover { background: #1e204a; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 72px 0 60px;
+    display: grid; grid-template-columns: 1fr 380px; gap: 48px; align-items: start;
+  }
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cyan); margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero-eyebrow::before {
+    content: ''; display: inline-block;
+    width: 24px; height: 1px; background: var(--cyan);
+  }
+  .hero-title {
+    font-size: clamp(28px, 4vw, 42px); font-weight: 700;
+    line-height: 1.15; letter-spacing: -.03em;
+    text-wrap: balance;
+    margin-bottom: 20px;
+  }
+  .hero-title em { font-style: normal; color: var(--indigo); }
+  .hero-desc {
+    font-size: 15px; color: var(--muted); line-height: 1.75;
+    max-width: 480px; margin-bottom: 32px;
+  }
+  .hero-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px; font-weight: 600; letter-spacing: .05em;
+    padding: 4px 10px; border: 1px solid var(--border2); border-radius: 3px;
+    color: var(--muted);
+  }
+  .badge-indigo { border-color: #3b3f8c; color: #818cf8; background: #1e1f4a; }
+  .badge-cyan   { border-color: #164e5e; color: #22d3ee; background: #0c2a34; }
+
+  /* ── Stats box ── */
+  .stats-box {
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  .stats-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .stat-cell {
+    padding: 20px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  }
+  .stat-cell:nth-child(even) { border-right: none; }
+  .stat-cell:nth-last-child(-n+2) { border-bottom: none; }
+  .stat-num {
+    font-size: 28px; font-weight: 700; letter-spacing: -.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text); line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-num span { font-size: 14px; color: var(--muted); font-weight: 400; margin-left: 2px; }
+  .stat-label { font-size: 11px; color: var(--muted); }
+  .stat-num.c-indigo { color: var(--indigo); }
+  .stat-num.c-cyan   { color: var(--cyan); }
+  .stat-num.c-emerald{ color: var(--emerald); }
+  .stat-num.c-amber  { color: var(--amber); }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+  /* ── Section ── */
+  .section { padding: 60px 0; }
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 22px; font-weight: 700; letter-spacing: -.02em;
+    text-wrap: balance; margin-bottom: 6px;
+  }
+  .section-desc { font-size: 14px; color: var(--muted); margin-bottom: 36px; }
+
+  /* ── Workflow ── */
+  .workflow {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--border);
+  }
+  .wf-step { padding: 28px 28px 32px; border-right: 1px solid var(--border); }
+  .wf-step:last-child { border-right: none; }
+  .wf-num {
+    font-size: 11px; font-weight: 700; letter-spacing: .12em; font-variant-numeric: tabular-nums;
+    color: var(--muted); margin-bottom: 18px;
+  }
+  .wf-icon {
+    width: 40px; height: 40px; border: 1px solid var(--border2);
+    display: grid; place-items: center; margin-bottom: 16px;
+    font-size: 18px;
+  }
+  .wf-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .wf-desc  { font-size: 13px; color: var(--muted); line-height: 1.65; }
+  .wf-files { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .wf-file {
+    font-size: 11px; font-family: 'Courier New', monospace;
+    color: var(--cyan); background: #0c2030; border: 1px solid #164e5e;
+    padding: 3px 8px; display: inline-block; width: fit-content;
+  }
+  .wf-arrow {
+    text-align: center; color: var(--muted); font-size: 20px;
+    padding-top: 50px;
+  }
+
+  /* ── Features grid ── */
+  .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border: 1px solid var(--border); }
+  .feature {
+    padding: 24px 28px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .feature:hover { background: var(--card); }
+  .feature:nth-child(2n) { border-right: none; }
+  .feature:nth-last-child(-n+2) { border-bottom: none; }
+  .feat-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .feat-icon {
+    width: 30px; height: 30px; display: grid; place-items: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .feat-name { font-size: 13px; font-weight: 600; }
+  .feat-badge {
+    margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--border2);
+    color: var(--muted); flex-shrink: 0;
+  }
+  .feat-badge.ai { border-color: #3b3f8c; color: #818cf8; background: #1a1b3e; }
+  .feat-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .feat-chips { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-size: 10px; padding: 2px 7px;
+    border: 1px solid var(--border); color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Sources ── */
+  .sources { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); }
+  .source { padding: 28px; border-right: 1px solid var(--border); }
+  .source:last-child { border-right: none; }
+  .source-icon { font-size: 24px; margin-bottom: 16px; }
+  .source-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .source-sub  { font-size: 11px; color: var(--muted); font-family: 'Courier New', monospace; margin-bottom: 12px; }
+  .source-fields { display: flex; flex-direction: column; gap: 4px; }
+  .source-field {
+    font-size: 11px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .source-field::before {
+    content: ''; width: 4px; height: 4px; background: var(--border2);
+    flex-shrink: 0;
+  }
+  .source-field strong { color: #7a8bb5; font-weight: 500; }
+
+  /* ── Category strips ── */
+  .cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--border); }
+  .cat { padding: 20px 22px; border-right: 1px solid var(--border); }
+  .cat:last-child { border-right: none; }
+  .cat-dot { width: 8px; height: 8px; margin-bottom: 12px; }
+  .cat-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .cat-desc { font-size: 11px; color: var(--muted); }
+
+  /* ── Tech bar ── */
+  .tech { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--border); }
+  .tech-item {
+    padding: 16px 24px; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .tech-item:last-child { border-right: none; }
+  .tech-name { font-size: 13px; font-weight: 600; }
+  .tech-role { font-size: 11px; color: var(--muted); }
+
+  /* ── CTA ── */
+  .cta-band {
+    margin: 0 -28px;
+    padding: 48px 28px;
+    background: linear-gradient(135deg, #13163a 0%, #0a1928 100%);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    flex-wrap: wrap;
+  }
+  .cta-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px; }
+  .cta-sub   { font-size: 13px; color: var(--muted); }
+  .cta-url {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    background: var(--indigo); padding: 10px 22px;
+    text-decoration: none; letter-spacing: -.01em;
+    transition: opacity .15s;
+  }
+  .cta-url:hover { opacity: .85; }
+
+  /* ── Footer ── */
+  footer {
+    padding: 24px 0; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; color: var(--muted);
+  }
+
+  @media (max-width: 760px) {
+    .hero      { grid-template-columns: 1fr; }
+    .workflow  { grid-template-columns: 1fr; }
+    .wf-step   { border-right: none; border-bottom: 1px solid var(--border); }
+    .features  { grid-template-columns: 1fr; }
+    .feature   { border-right: none !important; }
+    .sources   { grid-template-columns: 1fr; }
+    .source    { border-right: none; border-bottom: 1px solid var(--border); }
+    .cats      { grid-template-columns: 1fr 1fr; }
+    .tech      { flex-direction: column; }
+    .tech-item { border-right: none; border-bottom: 1px solid var(--border); }
+    .cta-band  { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<div class="page">
+
+  <!-- Top bar -->
+  <nav class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-mark">IC</div>
+      <div>
+        <div class="logo-name">재고/원가관리 대시보드</div>
+        <div class="logo-sub">Inventory &amp; Cost Analysis</div>
+      </div>
+    </div>
+    <a class="topbar-link" href="https://fritor-ship-it.github.io/inventory-cost-dashboard/" target="_blank">
+      라이브 사이트 →
+    </a>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div>
+      <div class="hero-eyebrow">AI-Powered Dashboard</div>
+      <h1 class="hero-title">
+        재고·원가 분석을<br>
+        <em>자동화</em>하는<br>
+        통합 관리 시스템
+      </h1>
+      <p class="hero-desc">
+        QuickBooks 입고 내역과 Fishbowl 재고대장을 업로드하면
+        재고수불부 생성·원가분석·이상탐지·적정재고 산출까지
+        한 번에 처리합니다. 월마감 담당자의 수작업을 90% 단축합니다.
+      </p>
+      <div class="hero-badges">
+        <span class="badge badge-indigo">Henry Schein B2B</span>
+        <span class="badge badge-cyan">Seegene STI B2C</span>
+        <span class="badge">Reagent · Calibrator · Control · Consumables</span>
+        <span class="badge">GitHub Pages 배포</span>
+      </div>
+    </div>
+    <div>
+      <div class="stats-box">
+        <div class="stats-header">현재 데이터 기준 (2025-12)</div>
+        <div class="stats-grid">
+          <div class="stat-cell">
+            <div class="stat-num c-indigo">252<span>종</span></div>
+            <div class="stat-label">관리 SKU</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-num c-cyan">36.2<span>%</span></div>
+            <div class="stat-label">재료비 원가율</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-num c-amber">35<span>건</span></div>
+            <div class="stat-label">이상 탐지 항목</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-num c-emerald">10<span>개</span></div>
+            <div class="stat-label">대시보드 탭</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Workflow -->
+  <section class="section">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">3단계로 완성되는 월마감 원가분석</h2>
+    <p class="section-desc">파일 3개 업로드만으로 모든 분석이 자동 생성됩니다.</p>
+
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-num">STEP 01</div>
+        <div class="wf-icon">📂</div>
+        <div class="wf-title">파일 업로드</div>
+        <div class="wf-desc">Fishbowl 재고대장, QuickBooks 입고내역, SKU Master 3개 파일을 업로드합니다.</div>
+        <div class="wf-files">
+          <span class="wf-file">Fishbowl 재고대장.xlsx</span>
+          <span class="wf-file">QuickBooks양식(입고).xlsx</span>
+          <span class="wf-file">SKU 마스터.xlsx</span>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">STEP 02</div>
+        <div class="wf-icon">🤖</div>
+        <div class="wf-title">AI 자동 분석</div>
+        <div class="wf-desc">SKU 매칭, 기말재고 반영, 재고수불부 계산, 원가율 산출, 이상항목 자동 탐지, 적정재고 AI 산출이 동시에 이뤄집니다.</div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">STEP 03</div>
+        <div class="wf-icon">📊</div>
+        <div class="wf-title">결과물 자동 다운로드</div>
+        <div class="wf-desc">분석 완료 즉시 3개 Excel 결과물이 자동으로 저장됩니다.</div>
+        <div class="wf-files">
+          <span class="wf-file">재고수불부_2025-12.xlsx</span>
+          <span class="wf-file">원가분석_월별.xlsx</span>
+          <span class="wf-file">이상항목_리스트.xlsx</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Features -->
+  <section class="section">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">10개 탭의 주요 기능</h2>
+    <p class="section-desc">데이터 입력부터 AI 분석까지 전 과정을 단일 화면에서 관리합니다.</p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">📊</div>
+          <div class="feat-name">Dashboard</div>
+        </div>
+        <div class="feat-desc">월별 재료비 추이, 원가율 트렌드, 이상항목 요약, AI 재고 경보를 한눈에 확인합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">KPI 카드</span>
+          <span class="chip">B2B/B2C 차트</span>
+          <span class="chip">원가율 트렌드</span>
+          <span class="chip">AI Alert Panel</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">🤖</div>
+          <div class="feat-name">AI Commentary</div>
+          <span class="feat-badge ai">AI</span>
+        </div>
+        <div class="feat-desc">원가율 변동 원인 분석, 주요 품목별 영향, 월마감 담당자 전달 코멘트를 자동 생성합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">자연어 코멘트</span>
+          <span class="chip">Action Items</span>
+          <span class="chip">월마감 메모 복사</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">📦</div>
+          <div class="feat-name">Inventory Optimization</div>
+          <span class="feat-badge ai">AI</span>
+        </div>
+        <div class="feat-desc">품목별 적정재고, 재주문점, 안전재고, 30/60/90일 예측, 권장 발주수량을 AI가 자동 계산합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">262개 품목</span>
+          <span class="chip">Health Score</span>
+          <span class="chip">재고 예측</span>
+          <span class="chip">발주 권고</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">📋</div>
+          <div class="feat-name">Inventory Ledger</div>
+        </div>
+        <div class="feat-desc">기초재고 + 당월입고 − 기말재고 = 사용액 공식으로 품목별 재고수불부를 월별로 조회합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">월별 필터</span>
+          <span class="chip">SKU 검색</span>
+          <span class="chip">Excel 다운로드</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">🔗</div>
+          <div class="feat-name">SKU Mapping</div>
+        </div>
+        <div class="feat-desc">Fishbowl SKU ↔ QuickBooks 품목코드를 자동 매칭하고, 불일치·미매칭 항목을 관리합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">유사도 스코어</span>
+          <span class="chip">FB전용 / QB전용</span>
+          <span class="chip">수동 매핑</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">📈</div>
+          <div class="feat-name">Cost Analysis</div>
+        </div>
+        <div class="feat-desc">월별 재료비 추이, 전월 대비 증감률, 30% 이상 급변 품목을 원가 카테고리별로 분석합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">월별 원가율</span>
+          <span class="chip">MoM 증감</span>
+          <span class="chip">⚠ 30% 경보</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">👥</div>
+          <div class="feat-name">B2B / B2C Analysis</div>
+        </div>
+        <div class="feat-desc">Henry Schein B2B 임상진단 시약과 Seegene STI B2C 시약의 채널별 재료비 구성을 비교합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">채널 구성비</span>
+          <span class="chip">파이차트</span>
+          <span class="chip">월별 추이</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">🔬</div>
+          <div class="feat-name">Category Analysis</div>
+        </div>
+        <div class="feat-desc">Reagent · Calibrator · Control(QC) · Consumables 4개 카테고리별 재료비를 분리하여 분석합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">4-Category</span>
+          <span class="chip">스택 차트</span>
+          <span class="chip">품목별 상세</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">⚠️</div>
+          <div class="feat-name">Exception List</div>
+        </div>
+        <div class="feat-desc">SKU 불일치, QB/Fishbowl 입고 차이, 기말재고 누락, 원가율 급등락 등 이상항목을 자동 탐지합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">High / Medium / Low</span>
+          <span class="chip">유형 필터</span>
+          <span class="chip">Excel 내보내기</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feat-head">
+          <div class="feat-icon">⚙️</div>
+          <div class="feat-name">Settings / Master</div>
+        </div>
+        <div class="feat-desc">SKU Master 편집, Cost Category 관리, 자동 매칭 규칙 및 이상탐지 임계값을 설정합니다.</div>
+        <div class="feat-chips">
+          <span class="chip">SKU 편집</span>
+          <span class="chip">매핑 규칙</span>
+          <span class="chip">임계값 설정</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Data Sources -->
+  <section class="section">
+    <div class="section-label">Data Sources</div>
+    <h2 class="section-title">3개 파일로 구동되는 분석 엔진</h2>
+    <p class="section-desc">별도의 DB 연동 없이 Excel/CSV 업로드만으로 전체 분석이 실행됩니다.</p>
+
+    <div class="sources">
+      <div class="source">
+        <div class="source-icon">📂</div>
+        <div class="source-name">Fishbowl 재고대장</div>
+        <div class="source-sub">Inventory Valuation Summary</div>
+        <div class="source-fields">
+          <div class="source-field"><strong>Item SKU</strong> — SKU 코드</div>
+          <div class="source-field"><strong>Qty</strong> — 현재 보유 수량</div>
+          <div class="source-field"><strong>Unit Cost</strong> — 단가 (USD)</div>
+          <div class="source-field"><strong>Asset Value</strong> — 재고 금액</div>
+          <div class="source-field"><strong>Type</strong> — 품목 구분</div>
+          <div class="source-field"><strong>B2B/B2C</strong> — 채널</div>
+          <div class="source-field"><strong>Item Tags</strong> — 장비명 ||| 공급사</div>
+        </div>
+      </div>
+      <div class="source">
+        <div class="source-icon">💼</div>
+        <div class="source-name">QuickBooks</div>
+        <div class="source-sub">Transaction Detail (입고)</div>
+        <div class="source-fields">
+          <div class="source-field"><strong>Transaction date</strong> — MM/DD/YYYY</div>
+          <div class="source-field"><strong>Vendor</strong> — 거래처 (그룹 헤더)</div>
+          <div class="source-field"><strong>Product/Service</strong> — 품목명</div>
+          <div class="source-field"><strong>Description</strong> — SKU 코드</div>
+          <div class="source-field"><strong>Quantity</strong> — 입고 수량</div>
+          <div class="source-field"><strong>Rate</strong> — 단가 (USD)</div>
+          <div class="source-field"><strong>Amount</strong> — 입고 금액</div>
+        </div>
+      </div>
+      <div class="source">
+        <div class="source-icon">📑</div>
+        <div class="source-name">SKU Master</div>
+        <div class="source-sub">품목 마스터 데이터</div>
+        <div class="source-fields">
+          <div class="source-field"><strong>*Item-Name</strong> — 품목명</div>
+          <div class="source-field"><strong>Item-Sku</strong> — SKU 코드</div>
+          <div class="source-field"><strong>Type</strong> — 카테고리</div>
+          <div class="source-field"><strong>B2B/B2C</strong> — 채널</div>
+          <div class="source-field"><strong>Vendor</strong> — 공급업체</div>
+          <div class="source-field"><strong>Department</strong> — 부서</div>
+          <div class="source-field" style="color:#4b5a7a; font-style:italic">Fishbowl IVS로 자동 생성 가능</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Category System -->
+  <section class="section">
+    <div class="section-label">Category System</div>
+    <h2 class="section-title">4개 재고 카테고리 체계</h2>
+    <p class="section-desc">Fishbowl의 Type 필드를 기반으로 자동 분류됩니다.</p>
+
+    <div class="cats">
+      <div class="cat">
+        <div class="cat-dot" style="background:#6366f1"></div>
+        <div class="cat-name">Reagent</div>
+        <div class="cat-desc" style="color:#6366f1;font-size:10px;margin-bottom:8px">시약</div>
+        <div class="cat-desc">PCR / ELISA / NGS / STI 진단 시약. Seegene Allplex™ 시리즈, Henry Schein 임상진단 키트 포함.</div>
+      </div>
+      <div class="cat">
+        <div class="cat-dot" style="background:#10b981"></div>
+        <div class="cat-name">Calibrator</div>
+        <div class="cat-desc" style="color:#10b981;font-size:10px;margin-bottom:8px">캘리브레이터</div>
+        <div class="cat-desc">장비 보정용 물질. Abbott Anti-HCV Calibrator, Bio-Rad HbA1c 등 Abbott/Siemens 장비용.</div>
+      </div>
+      <div class="cat">
+        <div class="cat-dot" style="background:#f59e0b"></div>
+        <div class="cat-name">Control (QC)</div>
+        <div class="cat-desc" style="color:#f59e0b;font-size:10px;margin-bottom:8px">정도관리 물질</div>
+        <div class="cat-desc">Roche Multi-Chemistry QC, Seegene Positive Control 등 정도관리 물질 전체.</div>
+      </div>
+      <div class="cat">
+        <div class="cat-dot" style="background:#22d3ee"></div>
+        <div class="cat-name">Consumables</div>
+        <div class="cat-desc" style="color:#22d3ee;font-size:10px;margin-bottom:8px">소모품</div>
+        <div class="cat-desc">BD 채혈관, 주사침, Sharps Container 등 검사 소모품 및 Lab supplies 전체.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Tech -->
+  <section class="section" style="padding-bottom:0">
+    <div class="section-label">Technology</div>
+    <h2 class="section-title">기술 스택</h2>
+    <p class="section-desc" style="margin-bottom:24px">별도 서버 없이 브라우저만으로 실행되는 순수 프론트엔드 애플리케이션.</p>
+
+    <div class="tech">
+      <div class="tech-item">
+        <div class="tech-name">React 19 + Vite</div>
+        <div class="tech-role">UI 프레임워크 / 빌드</div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-name">Tailwind CSS v4</div>
+        <div class="tech-role">스타일링</div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-name">Recharts</div>
+        <div class="tech-role">차트 / 데이터 시각화</div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-name">SheetJS (xlsx)</div>
+        <div class="tech-role">Excel 파싱 / 생성</div>
+      </div>
+      <div class="tech-item">
+        <div class="tech-name">GitHub Pages</div>
+        <div class="tech-role">무료 배포 / CDN</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-band">
+    <div>
+      <div class="cta-title">지금 바로 사용해보세요</div>
+      <div class="cta-sub">별도 설치 없이 브라우저에서 즉시 실행됩니다 · 샘플 데이터 내장</div>
+    </div>
+    <a class="cta-url" href="https://fritor-ship-it.github.io/inventory-cost-dashboard/" target="_blank">
+      대시보드 열기 →
+    </a>
+  </div>
+
+  <footer>
+    <span>재고/원가관리 AI 대시보드 · v1.0.0</span>
+    <span>React + Vite · GitHub Pages</span>
+  </footer>
+
+</div>

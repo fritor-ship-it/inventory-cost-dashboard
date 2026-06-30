@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import {
   LayoutDashboard, BookOpen, GitMerge, BarChart2, Users, FlaskConical,
   AlertTriangle, Bot, Settings, PackageSearch,
-  Upload, Download, FileSpreadsheet, Table2, ChevronDown, Calendar,
+  Upload, Download, FileSpreadsheet, Table2, ChevronDown, Calendar, Info,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'dashboard',    label: 'Dashboard',             icon: LayoutDashboard },
+  { id: 'intro',        label: '소개자료',               icon: Info },
   { id: 'ai',           label: 'AI Commentary',         icon: Bot },
   { id: 'inv-optim',    label: 'Inventory Optimization',icon: PackageSearch, badge: 'AI' },
   { id: 'ledger',       label: 'Inventory Ledger',      icon: BookOpen },

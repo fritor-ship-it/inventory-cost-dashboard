@@ -20,7 +20,7 @@ export default function SettingsTab() {
   const { data, revenueData, setMonthRevenue } = useData();
   const [skuList, setSkuList] = useState(data.skuMaster);
   const [catList, setCatList] = useState(data.costCategories || []);
-  const [activeSection, setActiveSection] = useState('revenue');
+  const [activeSection, setActiveSection] = useState('sku');
   const [saved, setSaved] = useState(false);
   const [filterYear, setFilterYear] = useState('all');
 
@@ -44,11 +44,11 @@ export default function SettingsTab() {
 
       <div className="flex gap-2 flex-wrap">
         {[
-          { id: 'revenue', label: '매출 관리 (Revenue)' },
           { id: 'sku',     label: 'SKU Master' },
           { id: 'cost',    label: 'Cost Categories' },
           { id: 'mapping', label: '매핑 규칙' },
           { id: 'system',  label: '시스템 설정' },
+          { id: 'revenue', label: '매출 관리 (Revenue)' },
         ].map(({ id, label }) => (
           <button key={id} onClick={() => setActiveSection(id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeSection===id?'bg-indigo-600 text-white':'bg-[#1a2235] text-[#6b7a9a] hover:text-white'}`}>

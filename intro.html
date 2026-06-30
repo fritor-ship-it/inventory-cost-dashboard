@@ -227,6 +227,144 @@
   .tech-name { font-size: 13px; font-weight: 600; }
   .tech-role { font-size: 11px; color: var(--muted); }
 
+  /* ── Page break strip ── */
+  .page-break {
+    margin: 0 -28px;
+    padding: 18px 28px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .page-break-num {
+    font-size: 10px; font-weight: 700; letter-spacing: .16em;
+    color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .page-break-title {
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .page-break-line {
+    flex: 1; height: 1px; background: var(--border);
+  }
+  .page-break-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    padding: 3px 10px; border: 1px solid #3b3f8c;
+    color: #818cf8; background: #1a1b3e;
+  }
+
+  /* ── AI Commentary page ── */
+  .ai-summary-box {
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 0;
+  }
+  .ai-summary-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ai-dot { width: 8px; height: 8px; background: var(--rose); border-radius: 50%; flex-shrink: 0; }
+  .ai-summary-header-text { font-size: 12px; font-weight: 600; }
+  .ai-summary-badge {
+    margin-left: auto; font-size: 10px; padding: 2px 8px;
+    background: #200e0e; border: 1px solid #5a1e1e; color: var(--rose);
+    font-weight: 600;
+  }
+  .ai-summary-body { padding: 20px; font-size: 13px; color: var(--muted); line-height: 1.75; }
+
+  .ai-findings { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); margin-top: 0; }
+  .ai-finding {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start;
+  }
+  .ai-finding:last-child { border-bottom: none; }
+  .ai-finding-icon { font-size: 16px; padding-top: 1px; }
+  .ai-finding-text { font-size: 13px; color: var(--muted); line-height: 1.65; }
+  .ai-finding-text strong { color: var(--text); font-weight: 600; }
+
+  .ai-actions { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); }
+  .ai-action {
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+    display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start;
+  }
+  .ai-action:last-child { border-bottom: none; }
+  .ai-action-num {
+    font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums;
+    color: var(--indigo); padding-top: 2px;
+  }
+  .ai-action-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .ai-action-text em { font-style: normal; color: #7a8bb5; }
+
+  .ai-memo-box {
+    border: 1px solid var(--border);
+    background: #080b10;
+    padding: 20px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px; line-height: 1.8;
+    color: #7a9ab5;
+  }
+  .ai-memo-box strong { color: var(--cyan); font-weight: normal; }
+
+  .ai-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .ai-col-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+
+  /* ── Inventory Optimization page ── */
+  .opt-formula {
+    border: 1px solid var(--border); background: var(--card);
+    padding: 0;
+  }
+  .opt-formula-row {
+    display: grid; grid-template-columns: 200px 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+  .opt-formula-row:last-child { border-bottom: none; }
+  .opt-formula-label {
+    padding: 14px 18px; border-right: 1px solid var(--border);
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    display: flex; align-items: center;
+  }
+  .opt-formula-val {
+    padding: 14px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px; color: var(--cyan);
+  }
+  .opt-formula-desc { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: inherit; }
+
+  .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--border); }
+  .status-card { padding: 20px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .status-card:nth-child(3n) { border-right: none; }
+  .status-card:nth-last-child(-n+3) { border-bottom: none; }
+  .status-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .status-icon { font-size: 16px; }
+  .status-name { font-size: 13px; font-weight: 600; }
+  .status-cond { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .status-formula { font-size: 11px; font-family: 'Courier New', monospace; color: var(--subtle); background: #0d1018; border: 1px solid var(--border); padding: 6px 10px; }
+
+  .forecast-bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--border); }
+  .forecast-bar { padding: 24px 20px; border-right: 1px solid var(--border); }
+  .forecast-bar:last-child { border-right: none; }
+  .forecast-day { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--muted); margin-bottom: 16px; }
+  .forecast-track { height: 6px; background: var(--border); margin-bottom: 12px; position: relative; }
+  .forecast-fill { position: absolute; left: 0; top: 0; height: 100%; }
+  .forecast-stats { display: flex; flex-direction: column; gap: 5px; }
+  .forecast-stat { display: flex; justify-content: space-between; font-size: 11px; }
+  .forecast-stat-label { color: var(--muted); }
+  .forecast-stat-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .kpi-strip { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--border); }
+  .kpi-cell { padding: 18px 16px; border-right: 1px solid var(--border); }
+  .kpi-cell:last-child { border-right: none; }
+  .kpi-val { font-size: 20px; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; margin-bottom: 4px; }
+  .kpi-lbl { font-size: 10px; color: var(--muted); }
+
+  .alert-sample { border: 1px solid #3a1a1a; background: #130808; padding: 0; }
+  .alert-sample-header { padding: 12px 18px; border-bottom: 1px solid #3a1a1a; display: flex; align-items: center; gap: 8px; }
+  .alert-sample-title { font-size: 12px; font-weight: 600; color: var(--rose); }
+  .alert-sample-badge { font-size: 9px; font-weight: 700; padding: 2px 8px; background: #3a0808; color: var(--rose); border: 1px solid #5a1e1e; margin-left: auto; }
+  .alert-row { padding: 10px 18px; border-bottom: 1px solid #1e1010; display: flex; justify-content: space-between; font-size: 12px; }
+  .alert-row:last-child { border-bottom: none; }
+  .alert-row-label { color: var(--muted); }
+  .alert-row-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+
   /* ── CTA ── */
   .cta-band {
     margin: 0 -28px;
@@ -266,6 +404,18 @@
     .tech      { flex-direction: column; }
     .tech-item { border-right: none; border-bottom: 1px solid var(--border); }
     .cta-band  { flex-direction: column; align-items: flex-start; }
+    .ai-two-col { grid-template-columns: 1fr; }
+    .status-grid { grid-template-columns: 1fr 1fr; }
+    .status-card:nth-child(2n) { border-right: none; }
+    .status-card:nth-child(2n+1) { border-right: 1px solid var(--border); }
+    .status-card:nth-last-child(-n+2) { border-bottom: none; }
+    .forecast-bars { grid-template-columns: 1fr; }
+    .forecast-bar { border-right: none; border-bottom: 1px solid var(--border); }
+    .kpi-strip { grid-template-columns: 1fr 1fr; }
+    .kpi-cell:nth-child(2n) { border-right: none; }
+    .kpi-cell { border-bottom: 1px solid var(--border); }
+    .opt-formula-row { grid-template-columns: 1fr; }
+    .opt-formula-label { border-right: none; border-bottom: 1px solid var(--border); }
   }
 </style>
 
@@ -628,6 +778,366 @@
       </div>
     </div>
   </section>
+
+  <!-- ════════════════════════════════════════
+       PAGE: AI Commentary
+  ════════════════════════════════════════ -->
+  <div class="page-break">
+    <span class="page-break-num">PAGE 02</span>
+    <div class="page-break-line"></div>
+    <span class="page-break-title">AI Commentary</span>
+    <span class="page-break-badge">AI</span>
+  </div>
+
+  <section class="section">
+    <div class="section-label">AI Commentary</div>
+    <h2 class="section-title">원가 변동을 언어로 설명하는 AI 분석 엔진</h2>
+    <p class="section-desc">원가율이 왜 오르고 내렸는지, 어떤 품목이 영향을 줬는지, 무엇을 먼저 확인해야 하는지를 자연어로 자동 생성합니다.</p>
+
+    <!-- AI 종합 요약 -->
+    <div style="margin-bottom:20px">
+      <div class="ai-col-label">AI 종합 요약 — 자동 생성 예시</div>
+      <div class="ai-summary-box">
+        <div class="ai-summary-header">
+          <div class="ai-dot"></div>
+          <span class="ai-summary-header-text">AI 종합 요약 · 2025년 12월</span>
+          <span class="ai-summary-badge">원가율 경보</span>
+        </div>
+        <div class="ai-summary-body">
+          2025년 12월 재료비 원가율은 <strong style="color:#e2e8f0">36.2%</strong>로 전월(33.8%) 대비 +2.4%p 상승하였습니다.
+          Henry Schein 공급 Troponin I HS Kit 단가 급등(+21.1%)과 Seegene Allplex™ STI Essential Panel 호흡기 시즌 수요 급증이
+          12월 원가율 상승의 주요 원인입니다. Calibrator 카테고리는 안정적이나 Reagent B2C 비중이 전월 대비 4.2%p 증가하였습니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-two-col" style="margin-bottom:20px">
+      <!-- 주요 발견 사항 -->
+      <div>
+        <div class="ai-col-label">주요 발견 사항 (Key Findings)</div>
+        <div class="ai-findings">
+          <div class="ai-finding">
+            <div class="ai-finding-icon">🇺🇸</div>
+            <div class="ai-finding-text">
+              <strong>Henry Schein Troponin I HS (HS-010)</strong> — Roche 공급가 $1,850 → $2,240 (+21.1%) 인상. USD 환율 동반 상승으로 원화 환산 영향 확대.
+            </div>
+          </div>
+          <div class="ai-finding">
+            <div class="ai-finding-icon">🔬</div>
+            <div class="ai-finding-text">
+              <strong>Allplex™ STI Essential Panel (SG-001)</strong> — 사용량 전월 대비 +45.2% 급증. 산부인과·비뇨기과 STI 정기검진 수요 증가.
+            </div>
+          </div>
+          <div class="ai-finding">
+            <div class="ai-finding-icon">📊</div>
+            <div class="ai-finding-text">
+              <strong>Allplex™ HPV HR Detection (SG-006)</strong> — 자궁경부암 검진 가이드라인 개정으로 사용량 +38.9%. B2C STI 재료비 비중 1위.
+            </div>
+          </div>
+          <div class="ai-finding">
+            <div class="ai-finding-icon">✅</div>
+            <div class="ai-finding-text">
+              Calibrator 카테고리 (Abbott 5종 + Henry Schein 2종): 안정적 운용 중. 발주 계획 변경 불필요.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 액션 아이템 -->
+      <div>
+        <div class="ai-col-label">확인 필요 액션 아이템 (Action Items)</div>
+        <div class="ai-actions">
+          <div class="ai-action">
+            <div class="ai-action-num">01</div>
+            <div class="ai-action-text">Henry Schein Troponin I HS Kit 단가 재협상 — Abbott ARCHITECT 대체 공급 견적 병행 <em>(구매팀)</em></div>
+          </div>
+          <div class="ai-action">
+            <div class="ai-action-num">02</div>
+            <div class="ai-action-text">Allplex™ STI Essential Panel 발주 수량 상향 — STI 검진 수요 증가 대비 재고 2개월치 확보 <em>(구매팀)</em></div>
+          </div>
+          <div class="ai-action">
+            <div class="ai-action-num">03</div>
+            <div class="ai-action-text">HbA1c Kit QB/FB 불일치 ₩270,000 — USD 환율 기준일 통일 후 재처리 <em>(회계팀)</em></div>
+          </div>
+          <div class="ai-action">
+            <div class="ai-action-num">04</div>
+            <div class="ai-action-text">PT/INR Reagent 미국 창고 기말재고 실사 완료 요청 <em>(창고팀)</em></div>
+          </div>
+          <div class="ai-action">
+            <div class="ai-action-num">05</div>
+            <div class="ai-action-text">Allplex™ HPV HR Detection 발주 플랜 수립 — 가이드라인 개정 반영 월 발주량 1.5배 <em>(구매팀)</em></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 월마감 담당자 전달 코멘트 -->
+    <div>
+      <div class="ai-col-label" style="margin-bottom:10px">월마감 담당자 전달 코멘트 — 복사 즉시 사용 가능</div>
+      <div class="ai-memo-box">
+<strong>[월마감 담당자 전달사항 - 2025년 12월]</strong>
+
+Henry Schein B2B 20종 + Seegene STI B2C 20종 포함 전체 252개 SKU 재고수불부 확정 필요.
+
+【Henry Schein B2B 긴급 사항 (USD 기반)】
+1. Troponin I HS (HS-010): 단가 +21.1% 인상 → 재협상 요청
+2. HbA1c Kit (HS-016): QB/FB 불일치 ₩270,000 → 환율 기준일 확인
+3. Vitamin D Kit (HS-009): 사용량 +38.5% → 적정재고 상향 검토
+
+【Seegene STI B2C 긴급 사항】
+4. Allplex™ STI Essential (SG-001): 사용량 +45.2% → 발주 수량 상향
+5. Allplex™ HPV HR Detection (SG-006): 사용량 +38.9% → 발주 플랜 수립
+
+위 5가지 항목 처리 후 최종 원가 확정 바랍니다. 감사합니다.</div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ════════════════════════════════════════
+       PAGE: Inventory Optimization
+  ════════════════════════════════════════ -->
+  <div class="page-break">
+    <span class="page-break-num">PAGE 03</span>
+    <div class="page-break-line"></div>
+    <span class="page-break-title">Inventory Optimization</span>
+    <span class="page-break-badge">AI</span>
+  </div>
+
+  <section class="section">
+    <div class="section-label">AI Inventory Optimization</div>
+    <h2 class="section-title">AI가 계산하는 품목별 적정재고</h2>
+    <p class="section-desc">최근 12개월 사용 패턴·리드타임·계절성을 종합하여 품목마다 재주문점과 권장 발주수량을 자동 산출합니다.</p>
+
+    <!-- AI Health Score + KPI -->
+    <div style="margin-bottom:24px">
+      <div class="ai-col-label" style="margin-bottom:12px">AI 재고 건강지표 (2025-12 기준 · 262개 품목)</div>
+      <div class="kpi-strip">
+        <div class="kpi-cell">
+          <div class="kpi-val" style="color:#e2e8f0">0<span style="font-size:14px;color:#4b5a7a">/100</span></div>
+          <div class="kpi-lbl">AI Health Score</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-val" style="color:#f87171">16<span style="font-size:13px">건</span></div>
+          <div class="kpi-lbl">Stockout Risk</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-val" style="color:#6366f1">₩24.4억</div>
+          <div class="kpi-lbl">Inventory Value</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-val" style="color:#3b82f6">₩5.0억</div>
+          <div class="kpi-lbl">Overstock Value</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-val" style="color:#f59e0b">₩4.5억</div>
+          <div class="kpi-lbl">Purchase Rec.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 계산 공식 -->
+    <div style="margin-bottom:24px">
+      <div class="ai-col-label" style="margin-bottom:12px">적정재고 계산 공식</div>
+      <div class="opt-formula">
+        <div class="opt-formula-row">
+          <div class="opt-formula-label">일평균 사용량</div>
+          <div class="opt-formula-val">= 최근 1개월 사용량 ÷ 30일
+            <div class="opt-formula-desc">계절성 지수 적용 (Q1/Q4: ×1.3, Q2/Q3: ×1.0)</div>
+          </div>
+        </div>
+        <div class="opt-formula-row">
+          <div class="opt-formula-label">안전재고 (Safety Stock)</div>
+          <div class="opt-formula-val">= 일평균 사용량 × 리드타임(일) × 1.5
+            <div class="opt-formula-desc">공급업체별 리드타임: Henry Schein 14일 / Abbott 21일 / Seegene 14일</div>
+          </div>
+        </div>
+        <div class="opt-formula-row">
+          <div class="opt-formula-label">재주문점 (Reorder Point)</div>
+          <div class="opt-formula-val">= 일평균 사용량 × 리드타임 + 안전재고
+            <div class="opt-formula-desc">현재 재고 ≤ 재주문점이면 발주 권고 표시</div>
+          </div>
+        </div>
+        <div class="opt-formula-row">
+          <div class="opt-formula-label">적정재고 (Optimal)</div>
+          <div class="opt-formula-val">= 월평균 사용량 × 2 × 추세계수 × 계절성 + 안전재고
+            <div class="opt-formula-desc">추세계수 = 최근 3개월 평균 ÷ 12개월 평균</div>
+          </div>
+        </div>
+        <div class="opt-formula-row">
+          <div class="opt-formula-label">권장 발주수량</div>
+          <div class="opt-formula-val">= ⌈(적정재고 + 안전재고 − 현재재고) ÷ MOQ⌉ × MOQ
+            <div class="opt-formula-desc">MOQ 배수 단위로 올림 처리</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 재고 상태 분류 6가지 -->
+    <div style="margin-bottom:24px">
+      <div class="ai-col-label" style="margin-bottom:12px">재고 상태 자동 분류 (6단계)</div>
+      <div class="status-grid">
+        <div class="status-card">
+          <div class="status-head">
+            <div class="status-icon">🔴</div>
+            <div class="status-name" style="color:#f87171">Critical 부족</div>
+          </div>
+          <div class="status-cond">현재재고 ≤ 안전재고</div>
+          <div class="status-formula">즉시 발주 권고 · 소진일 &lt; 리드타임</div>
+        </div>
+        <div class="status-card">
+          <div class="status-head">
+            <div class="status-icon">🟡</div>
+            <div class="status-name" style="color:#f59e0b">Low 주의</div>
+          </div>
+          <div class="status-cond">안전재고 &lt; 현재재고 &lt; 재주문점</div>
+          <div class="status-formula">발주 권고 · 잔여 여유 존재</div>
+        </div>
+        <div class="status-card">
+          <div class="status-head">
+            <div class="status-icon">🟢</div>
+            <div class="status-name" style="color:#34d399">Optimal 정상</div>
+          </div>
+          <div class="status-cond">재주문점 ≤ 현재재고 ≤ 적정재고×1.5</div>
+          <div class="status-formula">정상 범위 유지 · 발주 불필요</div>
+        </div>
+        <div class="status-card">
+          <div class="status-head">
+            <div class="status-icon">🔵</div>
+            <div class="status-name" style="color:#60a5fa">Overstock 과다</div>
+          </div>
+          <div class="status-cond">현재재고 ≥ 적정재고 × 1.5</div>
+          <div class="status-formula">다음 발주 연기 권고</div>
+        </div>
+        <div class="status-card">
+          <div class="status-head">
+            <div class="status-icon">⚫</div>
+            <div class="status-name" style="color:#9ca3af">Dead Stock</div>
+          </div>
+          <div class="status-cond">최근 90일 사용 기록 없음</div>
+          <div class="status-formula">반납·폐기 검토 대상</div>
+        </div>
+        <div class="status-card">
+          <div class="status-head">
+            <div class="status-icon">🟠</div>
+            <div class="status-name" style="color:#fb923c">Expiring Soon</div>
+          </div>
+          <div class="status-cond">유효기간 90일 이내</div>
+          <div class="status-formula">우선 사용 · 신규 구매 보류</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 긴급 알림 예시 + 30/60/90일 예측 -->
+    <div class="ai-two-col">
+      <!-- 즉시 대응 알림 예시 -->
+      <div>
+        <div class="ai-col-label" style="margin-bottom:10px">즉시 대응 알림 예시</div>
+        <div class="alert-sample">
+          <div class="alert-sample-header">
+            <span style="font-size:14px">🔴</span>
+            <span class="alert-sample-title">Allplex™ STI Internal Control Set</span>
+            <span class="alert-sample-badge">CRITICAL</span>
+          </div>
+          <div class="alert-row">
+            <span class="alert-row-label">현재재고 Current</span>
+            <span class="alert-row-val" style="color:#f87171">1 ea</span>
+          </div>
+          <div class="alert-row">
+            <span class="alert-row-label">적정재고 Optimal</span>
+            <span class="alert-row-val" style="color:#e2e8f0">52 ea</span>
+          </div>
+          <div class="alert-row">
+            <span class="alert-row-label">소진 예상 Stockout</span>
+            <span class="alert-row-val" style="color:#f87171">1일</span>
+          </div>
+          <div class="alert-row">
+            <span class="alert-row-label">리드타임 Lead Time</span>
+            <span class="alert-row-val" style="color:#4b5a7a">14일</span>
+          </div>
+          <div class="alert-row">
+            <span class="alert-row-label">권장 발주 Rec. Order</span>
+            <span class="alert-row-val" style="color:#f59e0b;font-weight:700">350 ea</span>
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:var(--muted); line-height:1.65; padding:12px; border:1px solid var(--border);">
+          💬 <em>"Allplex™ STI Internal Control Set은 현재 재고(1개)가 안전재고(8개) 이하입니다. 현 사용 속도 기준 약 1일 내 소진 예상되며, 공급업체 리드타임 14일을 감안할 때 즉시 350개 발주를 권장합니다."</em>
+        </div>
+      </div>
+
+      <!-- 30/60/90일 재고 예측 -->
+      <div>
+        <div class="ai-col-label" style="margin-bottom:10px">30 · 60 · 90일 재고 예측</div>
+        <div class="forecast-bars">
+          <div class="forecast-bar">
+            <div class="forecast-day">30일 후</div>
+            <div class="forecast-track">
+              <div class="forecast-fill" style="width:45%;background:#f59e0b"></div>
+            </div>
+            <div class="forecast-stats">
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Critical</span>
+                <span class="forecast-stat-val" style="color:#f87171">18건</span>
+              </div>
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Low</span>
+                <span class="forecast-stat-val" style="color:#f59e0b">24건</span>
+              </div>
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Optimal</span>
+                <span class="forecast-stat-val" style="color:#34d399">137건</span>
+              </div>
+            </div>
+          </div>
+          <div class="forecast-bar" style="background:#0d1118">
+            <div class="forecast-day">60일 후</div>
+            <div class="forecast-track">
+              <div class="forecast-fill" style="width:72%;background:#f87171"></div>
+            </div>
+            <div class="forecast-stats">
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Critical</span>
+                <span class="forecast-stat-val" style="color:#f87171">47건</span>
+              </div>
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Low</span>
+                <span class="forecast-stat-val" style="color:#f59e0b">38건</span>
+              </div>
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Optimal</span>
+                <span class="forecast-stat-val" style="color:#34d399">94건</span>
+              </div>
+            </div>
+          </div>
+          <div class="forecast-bar" style="background:#110d0d">
+            <div class="forecast-day">90일 후</div>
+            <div class="forecast-track">
+              <div class="forecast-fill" style="width:88%;background:#ef4444"></div>
+            </div>
+            <div class="forecast-stats">
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Critical</span>
+                <span class="forecast-stat-val" style="color:#f87171">73건</span>
+              </div>
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Low</span>
+                <span class="forecast-stat-val" style="color:#f59e0b">51건</span>
+              </div>
+              <div class="forecast-stat">
+                <span class="forecast-stat-label">Optimal</span>
+                <span class="forecast-stat-val" style="color:#34d399">56건</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:11px; color:var(--muted); padding:10px 14px; border:1px solid var(--border); line-height:1.65;">
+          현재 발주 없이 90일 경과 시 262개 품목 중 73건(28%)이 Critical 상태 진입 예상. 즉시 발주 우선순위: STI Control Set → Henry Schein Reagents → Seegene STI 패널 순.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
 
   <!-- CTA -->
   <div class="cta-band">

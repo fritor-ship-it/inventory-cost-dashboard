@@ -14,8 +14,8 @@ import IntroTab from './tabs/IntroTab';
 import SettingsTab from './tabs/SettingsTab';
 import { DataProvider, useData } from './context/DataContext';
 import {
-  downloadQBTemplate, downloadFishbowlTemplate, downloadPhysicalTemplate,
-  downloadSKUMasterTemplate, downloadCostCategoryTemplate, downloadAllTemplates,
+  downloadQBTemplate, downloadFishbowlTemplate,
+  downloadSKUMasterTemplate, downloadAllTemplates,
 } from './utils/templateUtils';
 import { exportInventoryLedger, exportCostAnalysis, exportExceptions } from './utils/exportUtils';
 
@@ -36,27 +36,26 @@ const TAB_COMPONENTS = {
 function AppInner() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showUpload, setShowUpload] = useState(false);
-  const [uploadMonth, setUploadMonth] = useState('');
   const { data } = useData();
   const ActiveComponent = TAB_COMPONENTS[activeTab];
 
-  async function handleDownload(key) {
-    const latest = data.monthlySummary?.[data.monthlySummary.length - 1];
+  // key: 다운로드 항목, month: 다운로드 드롭다운에서 선택한 기준월
+  async function handleDownload(key, month) {
+    const exportMonth = month || data.months?.[data.months.length - 1] || '';
     const allRows = data.skuMaster.map(s => {
       const arr = data.inventoryData[s.sku];
       return arr ? { ...s, ...arr[arr.length - 1] } : null;
     }).filter(Boolean);
 
-    if (key === 'all')               downloadAllTemplates();
+    if      (key === 'all')          downloadAllTemplates();
     else if (key === 'qb')           downloadQBTemplate();
     else if (key === 'fishbowl')     downloadFishbowlTemplate();
     else if (key === 'sku')          downloadSKUMasterTemplate();
-    else if (key === 'ledger')       exportInventoryLedger(allRows, latest?.month || '');
+    else if (key === 'ledger')       exportInventoryLedger(allRows, exportMonth);
     else if (key === 'costAnalysis') exportCostAnalysis(data.monthlySummary);
     else if (key === 'exceptions')   exportExceptions(data.exceptions);
     else if (key === 'allResults') {
-      // 전체 결과물 3개 순차 다운로드
-      exportInventoryLedger(allRows, latest?.month || '');
+      exportInventoryLedger(allRows, exportMonth);
       await new Promise(r => setTimeout(r, 300));
       exportCostAnalysis(data.monthlySummary);
       await new Promise(r => setTimeout(r, 300));
@@ -70,11 +69,10 @@ function AppInner() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         exceptionCount={data.exceptions.filter(e => e.severity === 'high').length}
-        onUpload={(month) => { setUploadMonth(month); setShowUpload(true); }}
+        onUpload={() => setShowUpload(true)}
         onDownload={handleDownload}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* 헤더 — 데이터 상태 표시만 */}
         <header className="border-b border-[#1e2638] bg-[#0f1117] px-6 py-3 flex items-center shrink-0">
           <div className="flex items-center gap-2 text-xs">
             <span className={`w-1.5 h-1.5 rounded-full ${data.isDemo ? 'bg-amber-400' : 'bg-emerald-400'}`} />
@@ -88,7 +86,6 @@ function AppInner() {
             )}
           </div>
         </header>
-
         <main className="flex-1 overflow-auto">
           <div className="p-6 max-w-[1400px]">
             <ActiveComponent />
@@ -96,7 +93,7 @@ function AppInner() {
         </main>
       </div>
 
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} targetMonth={uploadMonth} />}
+      {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}
     </div>
   );
 }

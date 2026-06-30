@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { X, Upload, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { X, Upload, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, RefreshCw, Calendar } from 'lucide-react';
+
+const YEARS  = [2023, 2024, 2025, 2026];
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 import { processUploadedFiles } from '../utils/parseUtils';
 import { exportInventoryLedger, exportCostAnalysis, exportExceptions } from '../utils/exportUtils';
 import { useData } from '../context/DataContext';
@@ -45,11 +48,15 @@ const C = {
   amber:   { border: 'border-amber-500/30 hover:border-amber-400/60',  icon: 'text-amber-400',   btn: 'bg-amber-500/10 text-amber-400' },
 };
 
-export default function UploadModal({ onClose, targetMonth }) {
+export default function UploadModal({ onClose }) {
   const { loadData, resetToDemo, data } = useData();
-  const [files, setFiles] = useState({});
+  const [files, setFiles]   = useState({});
   const [status, setStatus] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [year,  setYear]  = useState(2026);
+  const [month, setMonth] = useState(6);
+
+  const selectedMonth = `${year}-${String(month).padStart(2, '0')}`;
 
   const uploaded = Object.keys(files).length;
   const allUploaded = FILE_DEFS.every(f => files[f.id]);
@@ -92,24 +99,30 @@ export default function UploadModal({ onClose, targetMonth }) {
       <div className="relative ml-auto w-full max-w-lg h-full bg-[#0f1117] border-l border-[#1e2638] flex flex-col shadow-2xl overflow-hidden">
 
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1e2638] shrink-0">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-white font-bold text-base">Excel 파일 업로드</h2>
-              {targetMonth && (
-                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400">
-                  {targetMonth}
-                </span>
-              )}
+        <div className="px-6 py-4 border-b border-[#1e2638] shrink-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <h2 className="text-white font-bold text-base mb-1">Excel 파일 업로드</h2>
+              {/* 기준월 선택 */}
+              <div className="flex items-center gap-2 mt-2">
+                <Calendar size={12} className="text-[#4b5a7a] shrink-0" />
+                <span className="text-[11px] text-[#4b5a7a]">기준월</span>
+                <select value={year} onChange={e => setYear(Number(e.target.value))}
+                  className="bg-[#1a2235] border border-[#1e2638] text-[#a0b0cc] text-[11px] rounded-lg px-2 py-1 outline-none hover:border-indigo-500/40 transition-colors">
+                  {YEARS.map(y => <option key={y} value={y}>{y}년</option>)}
+                </select>
+                <select value={month} onChange={e => setMonth(Number(e.target.value))}
+                  className="bg-[#1a2235] border border-[#1e2638] text-[#a0b0cc] text-[11px] rounded-lg px-2 py-1 outline-none hover:border-indigo-500/40 transition-colors">
+                  {MONTHS.map(m => <option key={m} value={m}>{String(m).padStart(2,'0')}월</option>)}
+                </select>
+                <span className="text-[11px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">{selectedMonth}</span>
+              </div>
             </div>
-            <p className="text-[#4b5a7a] text-xs mt-1">
-              3개 파일을 선택하면 자동으로 분석합니다
-            </p>
+            <button type="button" onClick={onClose}
+              className="text-[#4b5a7a] hover:text-white p-1.5 rounded-lg hover:bg-[#1a2235] transition-colors shrink-0">
+              <X size={18} />
+            </button>
           </div>
-          <button type="button" onClick={onClose}
-            className="text-[#4b5a7a] hover:text-white p-1.5 rounded-lg hover:bg-[#1a2235] transition-colors">
-            <X size={18} />
-          </button>
         </div>
 
         {/* 파일 업로드 목록 */}

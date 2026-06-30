@@ -22,11 +22,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function CostTab() {
-  const { data } = useData();
+  const { data, selectedMonth, monthIndex } = useData();
   const { monthlySummary, skuMaster, inventoryData, months } = data;
 
-  const latest = monthlySummary[monthlySummary.length - 1];
-  const prev = monthlySummary[monthlySummary.length - 2] || latest;
+  const latest = monthlySummary[monthIndex] || monthlySummary[monthlySummary.length - 1];
+  const prev = monthlySummary[Math.max(0, monthIndex - 1)] || latest;
 
   const chartData = monthlySummary.map(m => ({
     month: m.month.slice(5),
@@ -39,8 +39,11 @@ export default function CostTab() {
   const monthChanges = skuMaster.map(s => {
     const arr = inventoryData[s.sku];
     if (!arr || arr.length < 2) return null;
-    const cur = arr[arr.length - 1];
-    const prv = arr[arr.length - 2];
+    const curIdx = Math.min(monthIndex, arr.length - 1);
+    const prvIdx = Math.max(0, curIdx - 1);
+    if (curIdx === prvIdx) return null;
+    const cur = arr[curIdx];
+    const prv = arr[prvIdx];
     const change = prv.usageValue > 0 ? (cur.usageValue - prv.usageValue) / prv.usageValue * 100 : 0;
     return { ...s, curUsage: cur.usageValue, prevUsage: prv.usageValue, change: parseFloat(change.toFixed(1)) };
   }).filter(Boolean).sort((a,b) => Math.abs(b.change) - Math.abs(a.change));

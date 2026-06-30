@@ -54,11 +54,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function DashboardTab() {
-  const { data } = useData();
+  const { data, selectedMonth, monthIndex } = useData();
   const { monthlySummary, skuMaster, inventoryData, exceptions, months } = data;
 
-  const latest = monthlySummary[monthlySummary.length - 1];
-  const prev = monthlySummary[monthlySummary.length - 2] || latest;
+  const latest = monthlySummary[monthIndex] || monthlySummary[monthlySummary.length - 1];
+  const prev = monthlySummary[Math.max(0, monthIndex - 1)] || latest;
 
   const chartData = monthlySummary.map(m => ({
     month: m.month.slice(5),
@@ -70,7 +70,7 @@ export default function DashboardTab() {
   const topUsage = skuMaster.map(s => {
     const rows = inventoryData[s.sku];
     if (!rows?.length) return null;
-    const row = rows[rows.length - 1];
+    const row = rows[monthIndex] || rows[rows.length - 1];
     return { name: s.name.length > 18 ? s.name.slice(0,18)+'…' : s.name, value: row.usageValue, category: s.category };
   }).filter(Boolean).sort((a,b) => b.value - a.value).slice(0, 6);
 
@@ -82,7 +82,7 @@ export default function DashboardTab() {
     <div className="space-y-5">
       <div>
         <h1 className="text-white font-bold text-lg">재고/원가관리 대시보드</h1>
-        <p className="text-[#4b5a7a] text-xs mt-0.5">{latest?.month} 기준 · {data.isDemo ? '샘플 데이터' : '업로드 데이터'}</p>
+        <p className="text-[#4b5a7a] text-xs mt-0.5">{selectedMonth} 기준 · {data.isDemo ? '샘플 데이터' : '업로드 데이터'}</p>
       </div>
 
       {/* AI Inventory Alert Panel */}

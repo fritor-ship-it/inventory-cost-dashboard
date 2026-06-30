@@ -4,6 +4,7 @@ import {
   AlertTriangle, Bot, Settings, PackageSearch,
   Upload, Download, FileSpreadsheet, Table2, ChevronDown, Calendar, Info,
 } from 'lucide-react';
+import { useData } from '../context/DataContext';
 
 const NAV_ITEMS = [
   { id: 'intro',        label: '소개자료',               icon: Info },
@@ -108,6 +109,58 @@ function DownloadMenu({ onDownload }) {
   );
 }
 
+// ── 기준연월 선택 컴포넌트 ────────────────────────────────────────────
+function MonthSelector() {
+  const { data, selectedMonth, setSelectedMonth } = useData();
+  const months = data.months || [];
+
+  // 사용 가능한 연도 목록
+  const years = [...new Set(months.map(m => m.slice(0, 4)))].sort();
+
+  const [selYear, setSelYear] = useState(() => selectedMonth?.slice(0, 4) || years[years.length - 1] || '2025');
+  const monthsForYear = months.filter(m => m.startsWith(selYear));
+
+  function handleYearChange(y) {
+    setSelYear(y);
+    const ms = months.filter(m => m.startsWith(y));
+    if (ms.length > 0) setSelectedMonth(ms[ms.length - 1]);
+  }
+
+  function handleMonthChange(m) {
+    setSelectedMonth(m);
+  }
+
+  const selMonth = selectedMonth?.startsWith(selYear) ? selectedMonth : monthsForYear[monthsForYear.length - 1] || selectedMonth;
+
+  return (
+    <div className="px-3 py-3 border-b border-[#1e2638] bg-[#0d1018] shrink-0">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Calendar size={11} className="text-indigo-400" />
+        <span className="text-[10px] text-[#4b5a7a] font-semibold">기준 연월</span>
+        <span className="ml-auto text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">{selectedMonth}</span>
+      </div>
+      <div className="flex gap-1.5">
+        <select
+          value={selYear}
+          onChange={e => handleYearChange(e.target.value)}
+          className="flex-1 bg-[#131720] border border-[#1e2638] text-[#a0b0cc] text-[11px] rounded-lg px-2 py-1.5 outline-none hover:border-indigo-500/40 transition-colors"
+        >
+          {years.map(y => <option key={y} value={y}>{y}년</option>)}
+        </select>
+        <select
+          value={selMonth || ''}
+          onChange={e => handleMonthChange(e.target.value)}
+          className="flex-1 bg-[#131720] border border-[#1e2638] text-[#a0b0cc] text-[11px] rounded-lg px-2 py-1.5 outline-none hover:border-indigo-500/40 transition-colors"
+        >
+          {monthsForYear.map(m => (
+            <option key={m} value={m}>{m.slice(5)}월</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 // ── 메인 사이드바 ─────────────────────────────────────────────────────
 export default function Sidebar({ activeTab, onTabChange, exceptionCount, onUpload, onDownload }) {
   return (
@@ -123,6 +176,9 @@ export default function Sidebar({ activeTab, onTabChange, exceptionCount, onUplo
           </div>
         </div>
       </div>
+
+      {/* 기준 연월 선택 — 소개자료 위 */}
+      <MonthSelector />
 
       {/* 네비게이션 */}
       <nav className="py-2 px-2 space-y-0.5 shrink-0">

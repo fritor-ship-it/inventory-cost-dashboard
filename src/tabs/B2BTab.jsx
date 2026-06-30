@@ -21,10 +21,10 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function B2BTab() {
-  const { data } = useData();
+  const { data, selectedMonth, monthIndex } = useData();
   const { monthlySummary, skuMaster, inventoryData, months } = data;
 
-  const latest = monthlySummary[monthlySummary.length - 1];
+  const latest = monthlySummary[monthIndex] || monthlySummary[monthlySummary.length - 1];
   const chartData = monthlySummary.map(m => ({
     month: m.month.slice(5),
     'B2B': Math.round(m.b2bUsage / 10000),
@@ -41,12 +41,12 @@ export default function B2BTab() {
 
   const b2bItems = skuMaster.filter(s => s.channel === 'B2B').map(s => {
     const arr = inventoryData[s.sku]; if (!arr?.length) return null;
-    return { ...s, usageValue: arr[arr.length - 1].usageValue };
+    return { ...s, usageValue: (arr[monthIndex] || arr[arr.length - 1]).usageValue };
   }).filter(Boolean).sort((a,b) => b.usageValue - a.usageValue);
 
   const b2cItems = skuMaster.filter(s => s.channel === 'B2C').map(s => {
     const arr = inventoryData[s.sku]; if (!arr?.length) return null;
-    return { ...s, usageValue: arr[arr.length - 1].usageValue };
+    return { ...s, usageValue: (arr[monthIndex] || arr[arr.length - 1]).usageValue };
   }).filter(Boolean).sort((a,b) => b.usageValue - a.usageValue);
 
   return (

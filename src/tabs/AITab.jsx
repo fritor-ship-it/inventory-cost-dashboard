@@ -4,12 +4,12 @@ import { useData } from '../context/DataContext';
 import { formatKRW } from '../utils/exportUtils';
 
 export default function AITab() {
-  const { data } = useData();
+  const { data, selectedMonth, monthIndex } = useData();
   const { monthlySummary, aiCommentary } = data;
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  const latest = monthlySummary[monthlySummary.length - 1];
+  const latest = monthlySummary[monthIndex] || monthlySummary[monthlySummary.length - 1];
 
   function copyMemo() {
     navigator.clipboard.writeText(aiCommentary.closingMemo);

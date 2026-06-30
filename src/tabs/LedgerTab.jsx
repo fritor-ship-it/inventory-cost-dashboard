@@ -1,19 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Download, Search } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { formatKRW, exportInventoryLedger } from '../utils/exportUtils';
 import { CATEGORIES, getCatMeta } from '../utils/categoryUtils';
 
 export default function LedgerTab() {
-  const { data } = useData();
+  const { data, selectedMonth: ctxMonth, monthIndex: ctxIndex } = useData();
   const { skuMaster, inventoryData, months } = data;
 
-  const [selectedMonth, setSelectedMonth] = useState(months[months.length - 1]);
+  // 사이드바 기준월과 동기화
+  const [selectedMonth, setSelectedMonth] = useState(ctxMonth);
+  useEffect(() => { setSelectedMonth(ctxMonth); }, [ctxMonth]);
+
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   const [filterCh, setFilterCh] = useState('all');
 
-  const monthIndex = months.indexOf(selectedMonth);
+  const monthIndex = months.indexOf(selectedMonth) >= 0 ? months.indexOf(selectedMonth) : ctxIndex;
 
   const rows = useMemo(() => {
     return skuMaster

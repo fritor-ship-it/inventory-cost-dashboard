@@ -29,18 +29,20 @@ const CAT_KEYS = {
 };
 
 export default function ReagentTab() {
-  const { data } = useData();
+  const { data, selectedMonth, monthIndex } = useData();
   const { monthlySummary, skuMaster, inventoryData, months } = data;
-  const latest = monthlySummary[monthlySummary.length - 1];
+  const latest = monthlySummary[monthIndex] || monthlySummary[monthlySummary.length - 1];
 
   // 카테고리별 품목 집계
   const catItems = CATEGORIES.map(cat => {
     const items = skuMaster.filter(s => s.category === cat).map(s => {
       const arr = inventoryData[s.sku];
       if (!arr?.length) return null;
-      const cur = arr[arr.length - 1];
-      const prv = arr[arr.length - 2];
-      const change = prv?.usageValue > 0
+      const curIdx = Math.min(monthIndex, arr.length - 1);
+      const prvIdx = Math.max(0, curIdx - 1);
+      const cur = arr[curIdx];
+      const prv = arr[prvIdx];
+      const change = prv?.usageValue > 0 && curIdx !== prvIdx
         ? ((cur.usageValue - prv.usageValue) / prv.usageValue * 100).toFixed(1)
         : '0.0';
       return { ...s, usageValue: cur.usageValue, change };

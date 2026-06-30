@@ -1,0 +1,331 @@
+import * as XLSX from 'xlsx';
+
+function readSheet(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        resolve(rows);
+      } catch (err) { reject(new Error(`파일 읽기 실패: ${err.message}`)); }
+    };
+    reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다.'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function toStr(v) { return String(v ?? '').trim(); }
+function toNum(v) { return parseFloat(String(v).replace(/[^0-9.-]/g, '')) || 0; }
+
+function parseDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) {
+    const y = v.getFullYear();
+    const m = String(v.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  }
+  const s = String(v);
+  const m = s.match(/(\d{4})[-./](\d{1,2})/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}`;
+  return null;
+}
+
+// ── 카테고리 파싱 (4개 체계) ──────────────────────────────────────────
+function parseCategory(raw) {
+  const v = toStr(raw).toLowerCase();
+  if (v.includes('calibrator') || v.includes('캘리브레이터') || v.includes('calibration')) return 'Calibrator';
+  if (v.includes('control') || v.includes('qc') || v.includes('quality') || v.includes('qc material')) return 'Control (QC Material)';
+  if (v.includes('consumable') || v.includes('소모품') || v.includes('supplies')) return 'Consumables';
+  return 'Reagent'; // 기본값
+}
+
+// ── 파서들 ──────────────────────────────────────────────────────────
+
+export async function parseQB(file) {
+  const rows = await readSheet(file);
+  if (rows.length < 2) throw new Error('QuickBooks 파일에 데이터가 없습니다.');
+  const data = rows.slice(1).filter(r => r[0]);
+  return data.map(r => ({
+    month: parseDate(r[0]),
+    vendor: toStr(r[1]),
+    name: toStr(r[2]),
+    sku: toStr(r[3]),
+    qty: toNum(r[4]),
+    unitCost: toNum(r[5]),
+    amount: toNum(r[6]),
+    account: toStr(r[7]),
+  })).filter(r => r.month && r.amount > 0);
+}
+
+export async function parseFishbowl(file) {
+  const rows = await readSheet(file);
+  if (rows.length < 2) throw new Error('Fishbowl 파일에 데이터가 없습니다.');
+  const data = rows.slice(1).filter(r => r[0]);
+  return data.map(r => ({
+    month: parseDate(r[0]),
+    sku: toStr(r[1]),
+    name: toStr(r[2]),
+    receiptQty: toNum(r[3]),
+    unitCost: toNum(r[4]),
+    receiptAmount: toNum(r[5]),
+    stockQty: toNum(r[6]),
+    stockValue: toNum(r[7]),
+  })).filter(r => r.month && r.sku);
+}
+
+export async function parsePhysical(file) {
+  const rows = await readSheet(file);
+  if (rows.length < 2) throw new Error('월말 실사 파일에 데이터가 없습니다.');
+  const data = rows.slice(1).filter(r => r[0]);
+  return data.map(r => ({
+    month: toStr(r[0]).trim(),
+    sku: toStr(r[1]),
+    name: toStr(r[2]),
+    openingQty: toNum(r[3]),
+    openingValue: toNum(r[4]),
+    closingQty: toNum(r[5]),
+    closingValue: toNum(r[6]),
+    notes: toStr(r[7]),
+  })).filter(r => r.month && r.sku);
+}
+
+export async function parseSKUMaster(file) {
+  const rows = await readSheet(file);
+  if (rows.length < 2) throw new Error('SKU Master 파일에 데이터가 없습니다.');
+  const data = rows.slice(1).filter(r => r[0]);
+  return data.map(r => ({
+    sku: toStr(r[0]),
+    name: toStr(r[1]),
+    category: parseCategory(r[2]),             // 4개 카테고리 지원
+    channel: toStr(r[3]).toUpperCase().includes('B2B') ? 'B2B' : 'B2C',
+    vendor: toStr(r[4]),
+    unit: toStr(r[5]),
+  })).filter(r => r.sku && r.name);
+}
+
+export async function parseCostCategory(file) {
+  if (!file) return []; // 선택 파일 — 없으면 빈 배열 반환
+  const rows = await readSheet(file);
+  if (rows.length < 2) return [];
+  const data = rows.slice(1).filter(r => r[0]);
+  return data.map(r => ({
+    code: toStr(r[0]),
+    name: toStr(r[1]),
+    type: parseCategory(r[2]),
+    glAccount: toStr(r[3]),
+  })).filter(r => r.code);
+}
+
+// ── 이상탐지 ────────────────────────────────────────────────────────
+
+function detectExceptions(skuMaster, inventoryBySkuMonth, qbBySkuMonth, fbBySkuMonth, months) {
+  const exceptions = [];
+  let id = 1;
+  const skuSet = new Set(skuMaster.map(s => s.sku));
+
+  // QB에 있는데 SKU 마스터에 없는 품목
+  for (const sku of Object.keys(qbBySkuMonth)) {
+    if (sku && !skuSet.has(sku)) {
+      exceptions.push({
+        id: id++, type: 'NO_LEDGER', severity: 'medium', sku,
+        name: qbBySkuMonth[sku]?.name || sku,
+        message: 'QB 입고 기록은 있으나 SKU 마스터에 없는 품목',
+        month: months[months.length - 1], action: 'SKU 마스터 등록 필요',
+      });
+    }
+  }
+
+  months.forEach(month => {
+    skuMaster.forEach(s => {
+      const inv = inventoryBySkuMonth[s.sku]?.[month];
+      const qb = qbBySkuMonth[s.sku]?.[month] || 0;
+      const fb = fbBySkuMonth[s.sku]?.[month]?.receiptAmount || 0;
+
+      if (qb > 0 && fb > 0) {
+        const diff = Math.abs(qb - fb);
+        const pct = diff / Math.max(qb, fb);
+        if (diff > 100000 || pct > 0.05) {
+          exceptions.push({
+            id: id++, type: 'QB_FB_DIFF',
+            severity: diff > 500000 ? 'high' : 'medium',
+            sku: s.sku, name: s.name,
+            message: `QB 입고 ${qb.toLocaleString()}원 vs FB 입고 ${fb.toLocaleString()}원 (차이: ${diff.toLocaleString()}원)`,
+            month, action: '전표 재확인 필요',
+          });
+        }
+      }
+
+      if (!inv || (inv.closingValue === 0 && inv.closingQty === 0 && qb > 0)) {
+        exceptions.push({
+          id: id++, type: 'MISSING_CLOSING', severity: 'medium',
+          sku: s.sku, name: s.name,
+          message: '기말재고 미기재 (실사표 확인 필요)',
+          month, action: '실사 담당자 확인',
+        });
+      }
+    });
+  });
+
+  for (let i = 1; i < months.length; i++) {
+    const cur = months[i], prv = months[i - 1];
+    skuMaster.forEach(s => {
+      const curUsage = inventoryBySkuMonth[s.sku]?.[cur]?.usageValue || 0;
+      const prvUsage = inventoryBySkuMonth[s.sku]?.[prv]?.usageValue || 0;
+      if (prvUsage > 50000 && curUsage > 0) {
+        const chg = (curUsage - prvUsage) / prvUsage * 100;
+        if (Math.abs(chg) >= 30) {
+          exceptions.push({
+            id: id++, type: 'VARIANCE_30', severity: 'medium',
+            sku: s.sku, name: s.name,
+            message: `전월 대비 ${chg > 0 ? '+' : ''}${chg.toFixed(1)}% 변동`,
+            month: cur, action: '수요 변동 원인 파악',
+          });
+        }
+      }
+    });
+  }
+
+  return exceptions.slice(0, 30);
+}
+
+// ── 메인 처리 함수 ───────────────────────────────────────────────────
+
+export async function processUploadedFiles(files) {
+  // Cost Category는 선택 파일
+  const [qbRaw, fbRaw, physRaw, skuRaw, costRaw] = await Promise.all([
+    parseQB(files.qb),
+    parseFishbowl(files.fishbowl),
+    parsePhysical(files.physical),
+    parseSKUMaster(files.sku),
+    parseCostCategory(files.cost || null),
+  ]);
+
+  if (skuRaw.length === 0) throw new Error('SKU Master 파일에 유효한 데이터가 없습니다. 양식을 확인해 주세요.');
+
+  // 월 목록
+  const monthSet = new Set([
+    ...qbRaw.map(r => r.month),
+    ...physRaw.map(r => r.month),
+  ].filter(Boolean));
+  const months = [...monthSet].sort();
+
+  if (months.length === 0) throw new Error('유효한 날짜 데이터가 없습니다. QB/실사 파일의 날짜 형식을 확인해 주세요.');
+
+  // QB 집계
+  const qbBySkuMonth = {};
+  qbRaw.forEach(r => {
+    if (!qbBySkuMonth[r.sku]) qbBySkuMonth[r.sku] = { name: r.name };
+    qbBySkuMonth[r.sku][r.month] = (qbBySkuMonth[r.sku][r.month] || 0) + r.amount;
+  });
+
+  // Fishbowl 집계
+  const fbBySkuMonth = {};
+  fbRaw.forEach(r => {
+    if (!fbBySkuMonth[r.sku]) fbBySkuMonth[r.sku] = {};
+    if (!fbBySkuMonth[r.sku][r.month]) {
+      fbBySkuMonth[r.sku][r.month] = { receiptAmount: 0, stockQty: r.stockQty, stockValue: r.stockValue };
+    }
+    fbBySkuMonth[r.sku][r.month].receiptAmount += r.receiptAmount;
+  });
+
+  // 실사 집계
+  const physBySkuMonth = {};
+  physRaw.forEach(r => {
+    if (!physBySkuMonth[r.sku]) physBySkuMonth[r.sku] = {};
+    physBySkuMonth[r.sku][r.month] = r;
+  });
+
+  // 재고수불부 생성
+  const inventoryData = {};
+  const inventoryBySkuMonth = {};
+
+  skuRaw.forEach(s => {
+    inventoryData[s.sku] = months.map(month => {
+      const phys = physBySkuMonth[s.sku]?.[month] || {};
+      const qbAmt = qbBySkuMonth[s.sku]?.[month] || 0;
+      const openingValue = phys.openingValue || 0;
+      const openingQty   = phys.openingQty   || 0;
+      const closingValue = phys.closingValue || 0;
+      const closingQty   = phys.closingQty   || 0;
+      const purchaseValue = qbAmt;
+      const purchaseQty  = openingQty > 0 ? Math.round(qbAmt / (openingValue / openingQty)) : 0;
+      const usageValue   = Math.max(0, openingValue + purchaseValue - closingValue);
+
+      const row = {
+        month, sku: s.sku, name: s.name,
+        category: s.category, channel: s.channel,
+        unitCost: openingQty > 0 ? Math.round(openingValue / openingQty) : 0,
+        openingQty, openingValue, purchaseQty, purchaseValue,
+        closingQty, closingValue, usageValue,
+        qbPurchase: qbAmt,
+        fbPurchase: fbBySkuMonth[s.sku]?.[month]?.receiptAmount || 0,
+      };
+
+      if (!inventoryBySkuMonth[s.sku]) inventoryBySkuMonth[s.sku] = {};
+      inventoryBySkuMonth[s.sku][month] = row;
+      return row;
+    });
+  });
+
+  // 월별 요약 — 4개 카테고리 전부 집계
+  const monthlySummary = months.map((month, i) => {
+    let totalOpening=0, totalPurchase=0, totalClosing=0, totalUsage=0;
+    let b2bUsage=0, b2cUsage=0;
+    let reagentOnly=0, calibratorUsage=0, controlUsage=0, consumablesUsage=0;
+
+    skuRaw.forEach(s => {
+      const row = inventoryBySkuMonth[s.sku]?.[month];
+      if (!row) return;
+      totalOpening   += row.openingValue;
+      totalPurchase  += row.purchaseValue;
+      totalClosing   += row.closingValue;
+      totalUsage     += row.usageValue;
+      if (s.channel === 'B2B') b2bUsage += row.usageValue; else b2cUsage += row.usageValue;
+      if      (s.category === 'Reagent')               reagentOnly      += row.usageValue;
+      else if (s.category === 'Calibrator')            calibratorUsage  += row.usageValue;
+      else if (s.category === 'Control (QC Material)') controlUsage     += row.usageValue;
+      else                                             consumablesUsage += row.usageValue;
+    });
+
+    // 하위 호환 필드
+    const reagentUsage   = reagentOnly + calibratorUsage + controlUsage;
+    const consumableUsage = consumablesUsage;
+
+    // 목표 원가율 기반 매출 (계절성 반영)
+    const TARGET = [0.385,0.372,0.356,0.331,0.318,0.307,0.315,0.328,0.341,0.352,0.368,0.382];
+    const monthIdx = parseInt(month.slice(5)) - 1;
+    const targetRate = TARGET[monthIdx] || 0.35;
+    const revenue  = totalUsage > 0 ? totalUsage / targetRate : 0;
+    const costRate = revenue > 0 ? parseFloat((totalUsage / revenue).toFixed(4)) : 0;
+
+    return {
+      month, totalOpening, totalPurchase, totalClosing, totalUsage,
+      b2bUsage, b2cUsage,
+      reagentUsage,     // 하위 호환 (Reagent+Cal+Control)
+      consumableUsage,  // 하위 호환 (Consumables only)
+      reagentOnly, calibratorUsage, controlUsage, consumablesUsage,
+      revenue, costRate, costRateChange: 0,
+    };
+  });
+
+  for (let i = 1; i < monthlySummary.length; i++) {
+    const prev = monthlySummary[i-1].costRate;
+    const cur  = monthlySummary[i].costRate;
+    monthlySummary[i].costRateChange = prev
+      ? parseFloat(((cur - prev) / prev * 100).toFixed(2)) : 0;
+  }
+
+  const exceptions = detectExceptions(skuRaw, inventoryBySkuMonth, qbBySkuMonth, fbBySkuMonth, months);
+
+  return {
+    skuMaster: skuRaw,
+    costCategories: costRaw,
+    inventoryData,
+    monthlySummary,
+    exceptions,
+    months,
+    isDemo: false,
+  };
+}

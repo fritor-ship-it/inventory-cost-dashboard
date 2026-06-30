@@ -125,16 +125,6 @@ export default function UploadModal({ onClose, targetMonth }) {
           </button>
         </div>
 
-        {/* 전체 양식 다운로드 */}
-        <div className="px-6 py-3 border-b border-[#1e2638] shrink-0">
-          <button
-            onClick={downloadAllTemplates}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 hover:text-indigo-300 text-xs font-semibold rounded-xl transition-all"
-          >
-            <Download size={14} /> 전체 양식 한번에 다운로드 (5개)
-          </button>
-        </div>
-
         {/* 파일 목록 */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 scrollbar-thin">
           {FILE_DEFS.map(({ id, label, desc, color, downloadFn, required }) => {

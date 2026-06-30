@@ -156,7 +156,7 @@ export default function UploadModal({ onClose }) {
                     id={`file-input-${id}`}
                     type="file"
                     accept=".xlsx,.xls,.csv"
-                    className="hidden"
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}
                     onChange={e => { handleFile(id, e.target.files[0]); e.target.value = ''; }}
                   />
 

@@ -38,22 +38,28 @@ function AppInner() {
   const { data } = useData();
   const ActiveComponent = TAB_COMPONENTS[activeTab];
 
-  function handleDownload(key) {
+  async function handleDownload(key) {
     const latest = data.monthlySummary?.[data.monthlySummary.length - 1];
     const allRows = data.skuMaster.map(s => {
       const arr = data.inventoryData[s.sku];
       return arr ? { ...s, ...arr[arr.length - 1] } : null;
     }).filter(Boolean);
 
-    if (key === 'all')          downloadAllTemplates();
-    else if (key === 'qb')      downloadQBTemplate();
-    else if (key === 'fishbowl')downloadFishbowlTemplate();
-    else if (key === 'physical')downloadPhysicalTemplate();
-    else if (key === 'sku')     downloadSKUMasterTemplate();
-    else if (key === 'cost')    downloadCostCategoryTemplate();
-    else if (key === 'ledger')  exportInventoryLedger(allRows, latest?.month || '');
+    if (key === 'all')               downloadAllTemplates();
+    else if (key === 'qb')           downloadQBTemplate();
+    else if (key === 'fishbowl')     downloadFishbowlTemplate();
+    else if (key === 'sku')          downloadSKUMasterTemplate();
+    else if (key === 'ledger')       exportInventoryLedger(allRows, latest?.month || '');
     else if (key === 'costAnalysis') exportCostAnalysis(data.monthlySummary);
     else if (key === 'exceptions')   exportExceptions(data.exceptions);
+    else if (key === 'allResults') {
+      // 전체 결과물 3개 순차 다운로드
+      exportInventoryLedger(allRows, latest?.month || '');
+      await new Promise(r => setTimeout(r, 300));
+      exportCostAnalysis(data.monthlySummary);
+      await new Promise(r => setTimeout(r, 300));
+      exportExceptions(data.exceptions);
+    }
   }
 
   return (

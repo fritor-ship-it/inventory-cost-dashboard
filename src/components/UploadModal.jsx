@@ -1,42 +1,49 @@
 import { useState, useRef } from 'react';
-import { X, Download, Upload, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { X, Download, Upload, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, RefreshCw, PackageCheck } from 'lucide-react';
 import {
-  downloadQBTemplate, downloadFishbowlTemplate, downloadPhysicalTemplate,
-  downloadSKUMasterTemplate, downloadCostCategoryTemplate, downloadAllTemplates,
+  downloadQBTemplate, downloadFishbowlTemplate,
+  downloadSKUMasterTemplate, downloadAllTemplates,
 } from '../utils/templateUtils';
 import { processUploadedFiles } from '../utils/parseUtils';
+import { exportInventoryLedger, exportCostAnalysis, exportExceptions } from '../utils/exportUtils';
 import { useData } from '../context/DataContext';
 
-// required: 필수 파일 / optional: 없으면 건너뜀
+// 결과물 3개 자동 다운로드
+async function autoDownloadResults(result) {
+  const lastMonth = result.months?.[result.months.length - 1] || '';
+  const allRows = (result.skuMaster || []).map(s => {
+    const arr = result.inventoryData?.[s.sku];
+    return arr ? { ...s, ...arr[arr.length - 1] } : null;
+  }).filter(Boolean);
+
+  // 브라우저가 연속 다운로드를 막지 않도록 300ms 간격
+  exportInventoryLedger(allRows, lastMonth);
+  await new Promise(r => setTimeout(r, 300));
+  exportCostAnalysis(result.monthlySummary || []);
+  await new Promise(r => setTimeout(r, 300));
+  exportExceptions(result.exceptions || []);
+}
+
+// 3개 파일만 사용
 const FILE_DEFS = [
   {
-    id: 'qb',       required: true,  label: 'QuickBooks (Purchase/GL)',
-    desc: '날짜·거래처·품목명·SKU·수량·단가·금액',
-    color: 'emerald', downloadFn: downloadQBTemplate,
-  },
-  {
-    id: 'fishbowl', required: true,  label: 'Fishbowl 재고대장 (Inventory Valuation Summary)',
-    desc: 'Item Name · SKU · Qty · Unit Cost · Asset Value · Type · B2B/B2C',
+    id: 'fishbowl', required: true, label: 'Fishbowl 재고대장',
+    desc: 'Inventory Valuation Summary — Item Name · SKU · Qty · Unit Cost · Type · B2B/B2C',
     color: 'blue', downloadFn: downloadFishbowlTemplate,
   },
   {
-    id: 'physical', required: true,  label: '월말 실사 재고표',
-    desc: '월·SKU·기초재고·기말재고 수량/금액',
-    color: 'violet', downloadFn: downloadPhysicalTemplate,
+    id: 'qb',       required: true, label: 'QuickBooks (Purchase/GL)',
+    desc: '날짜 · 거래처 · 품목명 · SKU · 수량 · 단가 · 금액',
+    color: 'emerald', downloadFn: downloadQBTemplate,
   },
   {
-    id: 'sku',      required: true,  label: 'SKU Master',
-    desc: 'SKU·품목명·Reagent/Calibrator/Control(QC)/Consumables·B2B/B2C·거래처',
+    id: 'sku',      required: true, label: 'SKU Master',
+    desc: 'SKU · 품목명 · Reagent/Calibrator/Control(QC)/Consumables · B2B/B2C · Vendor',
     color: 'amber', downloadFn: downloadSKUMasterTemplate,
-  },
-  {
-    id: 'cost',     required: false, label: 'Cost Category Master (선택)',
-    desc: '원가 카테고리 코드·Reagent/Calibrator/Control/Consumables·GL계정',
-    color: 'rose', downloadFn: downloadCostCategoryTemplate,
   },
 ];
 
-const REQUIRED_COUNT = FILE_DEFS.filter(f => f.required).length;
+const REQUIRED_COUNT = FILE_DEFS.length;
 
 const C = {
   emerald: { border: 'border-emerald-500/30 hover:border-emerald-400/50', icon: 'text-emerald-400', badge: 'bg-emerald-500/10 text-emerald-400', btn: 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
@@ -75,11 +82,14 @@ export default function UploadModal({ onClose, targetMonth }) {
       const result = await processUploadedFiles(files);
       loadData(result);
       setStatus('done');
+      // 결과물 3개 자동 다운로드
+      await autoDownloadResults(result);
     } catch (err) {
       setErrorMsg(err.message || '파일 처리 중 오류가 발생했습니다.');
       setStatus('error');
     }
   }
+
 
   function handleReset() {
     resetToDemo();
@@ -222,7 +232,10 @@ export default function UploadModal({ onClose, targetMonth }) {
           {status === 'done' && (
             <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
               <CheckCircle size={14} className="text-emerald-400 shrink-0" />
-              <p className="text-emerald-400 text-xs font-medium">데이터가 성공적으로 로드되었습니다! 대시보드에서 확인하세요.</p>
+              <div>
+                <p className="text-emerald-400 text-xs font-semibold">분석 완료! 결과물 3개가 자동으로 다운로드됩니다.</p>
+                <p className="text-[#4b5a7a] text-[11px] mt-0.5">재고수불부 · 원가분석 · 이상항목 리스트 Excel</p>
+              </div>
             </div>
           )}
 

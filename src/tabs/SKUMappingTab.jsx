@@ -76,7 +76,13 @@ function exportMappings(rows) {
   ws['!cols'] = [14,22,12,24,12,12,14,10,10].map(w => ({ wch: w }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'SKU_Mapping');
-  XLSX.writeFile(wb, 'SKU_Mapping.xlsx');
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'SKU_Mapping.xlsx';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 150);
 }
 
 export default function SKUMappingTab() {

@@ -36,17 +36,16 @@ function DownloadMenu({ onDownload }) {
 
   const ITEMS = [
     { section: '📋 양식 (Template)', list: [
-      { label: '전체 양식 한번에 (5개)', key: 'all',      accent: true },
+      { label: '전체 양식 한번에 (3개)', key: 'all',      accent: true },
+      { label: 'Fishbowl 재고대장 양식', key: 'fishbowl' },
       { label: 'QuickBooks 양식',        key: 'qb' },
-      { label: 'Fishbowl 재고대장 양식',  key: 'fishbowl' },
-      { label: '월말 실사 재고표 양식',  key: 'physical' },
       { label: 'SKU Master 양식',        key: 'sku' },
-      { label: 'Cost Category 양식',     key: 'cost' },
     ]},
-    { section: '📊 데이터 (Export)', list: [
-      { label: '재고수불부 Excel',       key: 'ledger' },
-      { label: '원가분석 Excel',         key: 'costAnalysis' },
-      { label: '이상항목 리스트 Excel',  key: 'exceptions' },
+    { section: '📊 결과물 (Export)', list: [
+      { label: '전체 결과물 한번에 (3개)', key: 'allResults', accent: true },
+      { label: '재고수불부 Excel',         key: 'ledger' },
+      { label: '원가분석 Excel',           key: 'costAnalysis' },
+      { label: '이상항목 리스트 Excel',    key: 'exceptions' },
     ]},
   ];
 

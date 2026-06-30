@@ -26,19 +26,26 @@ function parseDate(v) {
     const m = String(v.getMonth() + 1).padStart(2, '0');
     return `${y}-${m}`;
   }
-  const s = String(v);
-  const m = s.match(/(\d{4})[-./](\d{1,2})/);
-  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}`;
+  const s = String(v).trim();
+  // YYYY-MM-DD 또는 YYYY/MM/DD
+  const m1 = s.match(/(\d{4})[-./](\d{1,2})/);
+  if (m1) return `${m1[1]}-${String(m1[2]).padStart(2, '0')}`;
+  // MM/DD/YYYY (QuickBooks 형식)
+  const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m2) return `${m2[3]}-${String(m2[1]).padStart(2, '0')}`;
   return null;
 }
 
 // ── 카테고리 파싱 (4개 체계) ──────────────────────────────────────────
+// 실제 Fishbowl Type 값: reagent / control / calibrator / Linearity / consumable / equipment / Lab supplies
 function parseCategory(raw) {
-  const v = toStr(raw).toLowerCase();
-  if (v.includes('calibrator') || v.includes('캘리브레이터') || v.includes('calibration')) return 'Calibrator';
-  if (v.includes('control') || v.includes('qc') || v.includes('quality') || v.includes('qc material')) return 'Control (QC Material)';
-  if (v.includes('consumable') || v.includes('소모품') || v.includes('supplies')) return 'Consumables';
-  return 'Reagent'; // 기본값
+  const v = toStr(raw).toLowerCase().trim();
+  if (!v || v === 'true' || v === 'false') return 'Reagent'; // 불리언값 기본처리
+  if (v === 'calibrator' || v.includes('calibrat') || v.includes('linearity') || v.includes('캘리브')) return 'Calibrator';
+  if (v === 'control' || v.includes('control') || v.includes('qc') || v.includes('quality')) return 'Control (QC Material)';
+  if (v === 'consumable' || v === 'equipment' || v.includes('consumab') || v.includes('lab suppli') || v.includes('소모품')) return 'Consumables';
+  // reagent, 기타 → Reagent
+  return 'Reagent';
 }
 
 // ── 파서들 ──────────────────────────────────────────────────────────
@@ -46,6 +53,50 @@ function parseCategory(raw) {
 export async function parseQB(file) {
   const rows = await readSheet(file);
   if (rows.length < 2) throw new Error('QuickBooks 파일에 데이터가 없습니다.');
+
+  // ── QuickBooks Transaction Detail 형식 자동 감지 ──
+  // 헤더: [null, 'Transaction date', 'Transaction type', ...]
+  const h = rows[0] || [];
+  const isQBTransDetail = toStr(h[1]).toLowerCase().includes('transaction date');
+
+  if (isQBTransDetail) {
+    // Col A: Vendor(그룹헤더), Col B: 날짜(MM/DD/YYYY), Col C: Type, Col D: Num
+    // Col E: Product/Service, Col F: Description(SKU), Col G: Qty, Col H: Rate, Col I: Amount
+    const result = [];
+    let currentVendor = '';
+    for (const row of rows.slice(1)) {
+      // 거래처 헤더 행: Col A에 값, Col B 없음
+      if (row[0] && !row[1]) {
+        currentVendor = toStr(row[0]);
+        continue;
+      }
+      // 거래 행: Col B에 날짜, Col C에 거래유형
+      const date = parseDate(row[1]);
+      const txnType = toStr(row[2]);
+      if (!date || !txnType || txnType === 'Transaction type') continue;
+      const amount = toNum(row[8]); // Amount
+      if (amount <= 0) continue;
+
+      const productName = toStr(row[4]); // Product/Service full name
+      const description  = toStr(row[5]); // Description (often SKU)
+      const qty          = toNum(row[6]);
+      const rate         = toNum(row[7]);
+
+      result.push({
+        month: date,
+        vendor: currentVendor,
+        name: productName || description,
+        sku: description || productName,  // Description에 SKU 입력 권장
+        qty: qty || 0,
+        unitCost: rate || (qty > 0 ? amount / qty : amount),
+        amount,
+        account: txnType,
+      });
+    }
+    return result.filter(r => r.month && r.amount > 0);
+  }
+
+  // ── 레거시 형식 (날짜·거래처·품목명·SKU...) ──
   const data = rows.slice(1).filter(r => r[0]);
   return data.map(r => ({
     month: parseDate(r[0]),
@@ -169,16 +220,38 @@ export async function parsePhysical(file) {
 }
 
 export async function parseSKUMaster(file) {
+  if (!file) return [];
   const rows = await readSheet(file);
-  if (rows.length < 2) throw new Error('SKU Master 파일에 데이터가 없습니다.');
-  const data = rows.slice(1).filter(r => r[0]);
+  if (rows.length < 2) return [];
+
+  const header = rows[0] || [];
+  const h0 = toStr(header[0]).replace('*','').toLowerCase().trim();
+  const h1 = toStr(header[1]).toLowerCase().trim();
+
+  // ── 실제 양식: *Item-Name(col A) | Item-Sku(col B) | Type(col C) | B2B/B2C(col D) | Vendor(col E) ──
+  const isActualFormat = h0.includes('item') && h0.includes('name') && h1.includes('sku');
+
+  const data = rows.slice(1).filter(r => r[0] || r[1]);
+
+  if (isActualFormat) {
+    return data.map(r => ({
+      name:     toStr(r[0]),                   // *Item-Name
+      sku:      toStr(r[1]),                   // Item-Sku
+      category: parseCategory(r[2]),           // Type (reagent/calibrator/control/consumable)
+      channel:  toStr(r[3]).toUpperCase().includes('B2B') ? 'B2B' : 'B2C',
+      vendor:   toStr(r[4]),                   // Vendor
+      unit:     toStr(r[5]) || '',             // Department / Unit
+    })).filter(r => r.sku && r.name);
+  }
+
+  // ── 레거시 양식: SKU(col A) | Name(col B) | Category(col C) | Channel(col D) | Vendor(col E) ──
   return data.map(r => ({
-    sku: toStr(r[0]),
-    name: toStr(r[1]),
-    category: parseCategory(r[2]),             // 4개 카테고리 지원
-    channel: toStr(r[3]).toUpperCase().includes('B2B') ? 'B2B' : 'B2C',
-    vendor: toStr(r[4]),
-    unit: toStr(r[5]),
+    sku:      toStr(r[0]),
+    name:     toStr(r[1]),
+    category: parseCategory(r[2]),
+    channel:  toStr(r[3]).toUpperCase().includes('B2B') ? 'B2B' : 'B2C',
+    vendor:   toStr(r[4]),
+    unit:     toStr(r[5]) || '',
   })).filter(r => r.sku && r.name);
 }
 
@@ -270,42 +343,41 @@ function detectExceptions(skuMaster, inventoryBySkuMonth, qbBySkuMonth, fbBySkuM
 // ── 메인 처리 함수 ───────────────────────────────────────────────────
 
 export async function processUploadedFiles(files) {
-  // Cost Category는 선택 파일
-  const [qbRaw, fbRaw, physRaw, skuRaw, costRaw] = await Promise.all([
-    parseQB(files.qb),
+  // 3개 필수 파일: Fishbowl 재고대장, QuickBooks, SKU Master
+  const [fbRaw, qbRaw, skuRaw] = await Promise.all([
     parseFishbowl(files.fishbowl),
-    parsePhysical(files.physical),
+    parseQB(files.qb),
     parseSKUMaster(files.sku),
-    parseCostCategory(files.cost || null),
   ]);
 
-  // Fishbowl IVS 파일이면 SKU Master 자동 생성 가능
-  const isFishbowlIVS = fbRaw.length > 0 && fbRaw[0].category !== undefined;
+  if (fbRaw.length === 0) throw new Error('Fishbowl 재고대장에 유효한 데이터가 없습니다.');
+  if (qbRaw.length === 0) throw new Error('QuickBooks 파일에 유효한 데이터가 없습니다.');
+
+  // Fishbowl IVS 여부 확인
+  const isFishbowlIVS = fbRaw[0]?.category !== undefined;
+
+  // SKU Master: 파일이 없거나 비어 있으면 Fishbowl IVS로 자동 생성
   let finalSku = skuRaw;
-  if (finalSku.length === 0 && isFishbowlIVS) {
-    // Fishbowl IVS 데이터로 SKU Master 자동 구성
+  if (finalSku.length === 0) {
+    if (!isFishbowlIVS) throw new Error('SKU Master 파일에 유효한 데이터가 없습니다.');
     const seen = new Set();
-    finalSku = fbRaw.filter(r => {
-      if (seen.has(r.sku)) return false;
-      seen.add(r.sku);
-      return true;
-    }).map(r => ({
-      sku: r.sku, name: r.name, category: r.category,
-      channel: r.channel, vendor: r.vendor, unit: r.uom || '',
-    }));
-    if (finalSku.length === 0) throw new Error('SKU Master 파일에 유효한 데이터가 없습니다. 양식을 확인해 주세요.');
-  } else if (finalSku.length === 0) {
-    throw new Error('SKU Master 파일에 유효한 데이터가 없습니다. 양식을 확인해 주세요.');
+    finalSku = fbRaw.filter(r => { if (seen.has(r.sku)) return false; seen.add(r.sku); return true; })
+      .map(r => ({ sku: r.sku, name: r.name, category: r.category, channel: r.channel, vendor: r.vendor, unit: r.uom || '' }));
   }
 
-  // 월 목록
+  if (finalSku.length === 0) throw new Error('SKU Master를 구성할 수 없습니다. Fishbowl 파일을 확인해 주세요.');
+
+  // 월 목록: QB + Fishbowl IVS 날짜 기준
   const monthSet = new Set([
     ...qbRaw.map(r => r.month),
-    ...physRaw.map(r => r.month),
+    ...(isFishbowlIVS ? fbRaw.map(r => r.month) : []),
   ].filter(Boolean));
   const months = [...monthSet].sort();
 
-  if (months.length === 0) throw new Error('유효한 날짜 데이터가 없습니다. QB/실사 파일의 날짜 형식을 확인해 주세요.');
+  if (months.length === 0) throw new Error('유효한 날짜가 없습니다. QuickBooks 파일의 날짜 형식(YYYY-MM-DD)을 확인해 주세요.');
+
+  const physRaw  = []; // 월말 실사 파일 미사용
+  const costRaw  = []; // Cost Category 파일 미사용
 
   // QB 집계
   const qbBySkuMonth = {};

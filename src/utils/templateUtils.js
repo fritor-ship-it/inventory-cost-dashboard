@@ -8,92 +8,158 @@ function makeSheet(headers, rows, colWidths) {
 }
 
 function download(wb, filename) {
-  XLSX.writeFile(wb, filename);
+  // Blob + anchor 방식 — 브라우저에서 파일명이 정확하게 저장됨
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 150);
 }
 
 export function downloadQBTemplate() {
-  const headers = ['날짜(Date)', '거래처(Vendor)', '품목명(Item Name)', 'SKU', '수량(Qty)', '단가(Unit Cost)', '금액(Amount)', '계정(Account)', '비고'];
-  const rows = [
-    ['2025-12-01', 'BioTech Co.', 'PCR Master Mix', 'RG-001', 10, 45000, 450000, '재료비', ''],
-    ['2025-12-05', 'GeneSys Inc.', 'RNA Extraction Kit', 'RG-002', 5, 62000, 310000, '재료비', '단가인상'],
-    ['2025-12-10', 'LabSupply', 'Microcentrifuge Tubes 1.5ml', 'CS-001', 200, 150, 30000, '소모품', ''],
-  ];
-  const ws = makeSheet(headers, rows, [14, 18, 26, 10, 8, 12, 12, 12, 16]);
+  // 실제 QuickBooks Transaction Detail 리포트와 동일한 구조
+  // Col A: Vendor(그룹헤더) | B: Transaction date(MM/DD/YYYY) | C: Type | D: Num
+  // E: Product/Service | F: Description(SKU) | G: Quantity | H: Rate | I: Amount | J: Balance
+  const N = null;
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'QB_Purchase');
+
+  const headerRow = [N, 'Transaction date', 'Transaction type', 'Num', 'Product/Service full name', 'Description', 'Quantity', 'Rate', 'Amount', 'Balance'];
+
+  let balance = 0;
+  const mkRow = (vendor, date, type, num, product, desc, qty, rate) => {
+    const amount = qty ? Math.round(qty * rate * 100) / 100 : rate;
+    balance += amount;
+    return [vendor || N, date || N, type, num, product || '', desc || '', qty || N, rate || N, amount, balance];
+  };
+
+  const rows = [
+    headerRow,
+    // ── Henry Schein ──
+    ['Henry Schein', N, N, N, N, N, N, N, N, N],
+    mkRow(N, '06/01/2026','Bill','HS-INV-001','Anti-HCV Calibrator',    '1L79-01', 2, 253.99),
+    mkRow(N, '06/01/2026','Bill','HS-INV-001','Anti-Tg Calibrator',     '2K46-01', 2, 253.99),
+    mkRow(N, '06/01/2026','Bill','HS-INV-001','Anti-TPO Calibrator',    '2K47-01', 2, 253.99),
+    mkRow(N, '06/01/2026','Bill','HS-INV-001','AUSAB Calibrator',       '1L82-02', 2, 253.99),
+    mkRow(N, '06/01/2026','Bill','HS-INV-001','BNP Calibrator',         '8K28-04', 0,   0.00),
+    mkRow(N, '06/05/2026','Bill','HS-INV-002','Troponin I HS Assay Kit','HS-010',  2, 2240.00),
+    mkRow(N, '06/05/2026','Bill','HS-INV-002','Vitamin D (25-OH) Total','HS-009',  3, 890.00),
+    mkRow(N, '06/05/2026','Bill','HS-INV-002','D-Dimer Quantitative',   'HS-012',  2, 1250.00),
+    mkRow(N, '06/10/2026','Bill','HS-INV-003','Multi-Chemistry QC Low', 'HS-026A', 2, 85.00),
+    mkRow(N, '06/10/2026','Bill','HS-INV-003','Multi-Chemistry QC Norm','HS-026B', 2, 85.00),
+    mkRow(N, '06/10/2026','Bill','HS-INV-003','Multi-Chemistry QC High','HS-026C', 2, 85.00),
+    // ── Seegene Inc. ──
+    ['Seegene Inc.', N, N, N, N, N, N, N, N, N],
+    mkRow(N, '06/03/2026','Bill','SG-INV-001','Allplex STI Essential Panel','SG-001', 5, 380.00),
+    mkRow(N, '06/03/2026','Bill','SG-INV-001','Allplex STI Master Panel',   'SG-002', 3, 420.00),
+    mkRow(N, '06/03/2026','Bill','SG-INV-001','Allplex CT/NG Assay',        'SG-004', 4, 350.00),
+    mkRow(N, '06/03/2026','Bill','SG-INV-001','Allplex HPV HR Detection',   'SG-006', 3, 360.00),
+    mkRow(N, '06/03/2026','Bill','SG-INV-001','Allplex HBV Assay',          'SG-016', 2, 370.00),
+    mkRow(N, '06/03/2026','Bill','SG-INV-001','Allplex STI IC Set',         'SG-020', 1, 120.00),
+    // ── LabSupply ──
+    ['LabSupply', N, N, N, N, N, N, N, N, N],
+    mkRow(N, '06/08/2026','Bill','LAB-INV-001','Pipette Tips 200ul',        'CS-003', 500, 0.15),
+    mkRow(N, '06/08/2026','Bill','LAB-INV-001','Microcentrifuge Tubes 1.5ml','CS-001',200, 0.15),
+    mkRow(N, '06/08/2026','Bill','LAB-INV-001','PCR Plates 96-well',        'CS-002',  50, 2.50),
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [26, 16, 16, 14, 32, 14, 9, 11, 12, 12].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
   download(wb, 'QuickBooks_양식.xlsx');
 }
 
 export function downloadFishbowlTemplate() {
-  // Fishbowl Inventory Valuation Summary 실제 양식과 동일한 형식
+  // ── 실제 Fishbowl IVS 파일과 완전히 동일한 구조 ──
   const wb = XLSX.utils.book_new();
 
-  // ── 재고대장 시트 ──
-  const titleRow   = ['Inventory Valuation Summary', null, null, null, null, null, null, null, null, null, null, null];
-  const dateRow    = [new Date(), null, null, null, null, null, null, null, null, null, null, null];
-  const emptyRow   = [null, null, null, null, null, null, null, null, null, null, null, null];
-  const headerRow  = ['Item Name','Item Description','Item SKU','Qty','UOM','Unit Cost','Asset Value','Item Tags','Department','Notes','Type','B2B/B2C'];
-  const sampleRows = [
-    ['Anti-HCV Calibrator',            'Abbott',        '1L79-01',  2,  'Each', 253.99, 507.98,   'Architect i2000SR ||| Henry Schein', 'Core',  null, 'Calibrator',            'B2B'],
-    ['Anti-Tg Calibrator',             'Abbott',        '2K46-01',  2,  'Each', 253.99, 507.98,   'Architect i2000SR ||| Henry Schein', 'Core',  null, 'Calibrator',            'B2B'],
-    ['AUSAB Calibrator',               'Abbott',        '1L82-02',  2,  'Each', 253.99, 507.98,   'Architect i2000SR ||| Henry Schein', 'Core',  null, 'Calibrator',            'B2B'],
-    ['Allplex™ STI Essential Panel',   'Seegene',       'SG-001',   5,  'Kit',  380.00, 1900.00,  'STI Panel ||| Seegene Inc.',        'Core',  null, 'Reagent',               'B2C'],
-    ['Allplex™ HPV HR Detection',      'Seegene',       'SG-006',   3,  'Kit',  350.00, 1050.00,  'HPV Panel ||| Seegene Inc.',        'Core',  null, 'Reagent',               'B2C'],
-    ['Troponin I HS Kit',              'Henry Schein',  'HS-010',   2,  'Kit', 2240.00, 4480.00,  'Troponin ||| Henry Schein',         'Core',  null, 'Reagent',               'B2B'],
-    ['Multi-Chemistry QC (3 levels)',  'Henry Schein',  'HS-026',   1,  'Set',  320.00,  320.00,  'QC Material ||| Henry Schein',      'Core',  null, 'Control (QC Material)', 'B2B'],
-    ['CBC 5-Part Calibrator',          'Henry Schein',  'HS-025',   1,  'Set',  450.00,  450.00,  'Calibrator ||| Henry Schein',       'Core',  null, 'Calibrator',            'B2B'],
-    ['Pipette Tips 200ul',             'TipMaster',     'CS-003',  500, 'Pack',   0.15,   75.00,  'Consumables ||| TipMaster',         'Lab',   null, 'Consumables',           'B2C'],
-    ['Microcentrifuge Tubes 1.5ml',    'LabSupply',     'CS-001',  200, 'Pack',   0.15,   30.00,  'Consumables ||| LabSupply',         'Lab',   null, 'Consumables',           'B2B'],
+  const N = null;
+  const today = new Date();
+
+  // 샘플 데이터 (실제 파일과 동일한 12컬럼 구조)
+  const data = [
+    // Calibrator (Abbott / Henry Schein)
+    ['Anti-HCV Calibrator',          'Abbott',        '1L79-01', 2, 'Each', 253.99,  507.98,  'Architect i2000SR ||| Henry Schein', 'Core', N, 'Calibrator', 'B2B'],
+    ['Anti-Tg Calibrator',           'Abbott',        '2K46-01', 2, 'Each', 253.99,  507.98,  'Architect i2000SR ||| Henry Schein', 'Core', N, 'Calibrator', 'B2B'],
+    ['Anti-TPO Calibrator',          'Abbott',        '2K47-01', 2, 'Each', 253.99,  507.98,  'Architect i2000SR ||| Henry Schein', 'Core', N, 'Calibrator', 'B2B'],
+    ['AUSAB Calibrator',             'Abbott',        '1L82-02', 2, 'Each', 253.99,  507.98,  'Architect i2000SR ||| Henry Schein', 'Core', N, 'Calibrator', 'B2B'],
+    ['BNP Calibrator',               'Abbott',        '8K28-04', 0, 'Each', 248.73,  0,       'Architect i2000SR ||| Henry Schein', 'Core', N, 'Calibrator', 'B2B'],
+    ['HbA1c Calibrator Set',         'Henry Schein',  'HS-024',  1, 'Set',  420.00,  420.00,  'Bio-Rad NGSP ||| Henry Schein',      'Core', N, 'Calibrator', 'B2B'],
+    ['CBC 5-Part Calibrator',        'Henry Schein',  'HS-025',  1, 'Set',  450.00,  450.00,  'Sysmex ||| Henry Schein',            'Core', N, 'Calibrator', 'B2B'],
+    // Control (QC)
+    ['Multi-Chemistry QC Low',       'Henry Schein',  'HS-026A', 2, 'Each', 85.00,   170.00,  'Roche cobas ||| Henry Schein',       'Core', N, 'control',    'B2B'],
+    ['Multi-Chemistry QC Normal',    'Henry Schein',  'HS-026B', 2, 'Each', 85.00,   170.00,  'Roche cobas ||| Henry Schein',       'Core', N, 'control',    'B2B'],
+    ['Multi-Chemistry QC High',      'Henry Schein',  'HS-026C', 2, 'Each', 85.00,   170.00,  'Roche cobas ||| Henry Schein',       'Core', N, 'control',    'B2B'],
+    ['Troponin QC Pack',             'Henry Schein',  'HS-027',  1, 'Set',  380.00,  380.00,  'Siemens ||| Henry Schein',           'Core', N, 'control',    'B2B'],
+    ['Allplex STI Positive Control', 'Seegene',       'SG-019',  2, 'Set',  120.00,  240.00,  'STI Panel ||| Seegene Inc.',         'Core', N, 'control',    'B2C'],
+    // Reagent — B2B
+    ['Troponin I HS Assay Kit',      'Henry Schein',  'HS-010',  2, 'Kit', 2240.00, 4480.00,  'Abbott ARCHITECT ||| Henry Schein',  'Core', N, 'reagent',    'B2B'],
+    ['Vitamin D (25-OH) Total',      'Henry Schein',  'HS-009',  3, 'Kit',  890.00, 2670.00,  'Abbott ARCHITECT ||| Henry Schein',  'Core', N, 'reagent',    'B2B'],
+    ['D-Dimer Quantitative',         'Henry Schein',  'HS-012',  2, 'Kit', 1250.00, 2500.00,  'Siemens ||| Henry Schein',           'Core', N, 'reagent',    'B2B'],
+    // Reagent — B2C (Seegene STI)
+    ['Allplex STI Essential Panel',  'Seegene',       'SG-001',  5, 'Kit',  380.00, 1900.00,  'STI Panel ||| Seegene Inc.',         'Core', N, 'reagent',    'B2C'],
+    ['Allplex STI Master Panel',     'Seegene',       'SG-002',  3, 'Kit',  420.00, 1260.00,  'STI Panel ||| Seegene Inc.',         'Core', N, 'reagent',    'B2C'],
+    ['Allplex CT/NG Assay',          'Seegene',       'SG-004',  4, 'Kit',  350.00, 1400.00,  'CT/NG Assay ||| Seegene Inc.',       'Core', N, 'reagent',    'B2C'],
+    ['Allplex HPV HR Detection',     'Seegene',       'SG-006',  3, 'Kit',  360.00, 1080.00,  'HPV Panel ||| Seegene Inc.',         'Core', N, 'reagent',    'B2C'],
+    ['Allplex HBV Assay',            'Seegene',       'SG-016',  2, 'Kit',  370.00,  740.00,  'HBV Assay ||| Seegene Inc.',         'Core', N, 'reagent',    'B2C'],
+    // Consumable (Lab supplies)
+    ['Pipette Tips 200ul',           'TipMaster',     'CS-003', 500, 'Pack',   0.15,   75.00, 'Consumables ||| TipMaster',          'Lab',  N, 'consumable', 'B2B'],
+    ['Microcentrifuge Tubes 1.5ml',  'LabSupply',     'CS-001', 200, 'Pack',   0.15,   30.00, 'Consumables ||| LabSupply',          'Lab',  N, 'consumable', 'B2B'],
+    ['PCR Plates 96-well',           'LabSupply',     'CS-002',  50, 'Pack',   2.50,  125.00, 'Consumables ||| LabSupply',          'Lab',  N, 'consumable', 'B2B'],
+    ['Nitrile Gloves M',             'SafeGuard',     'CS-004', 100, 'Pack',   0.08,    8.00, 'Consumables ||| SafeGuard',          'Lab',  N, 'consumable', 'B2C'],
   ];
 
-  // 소계 행
-  const totalAssets = sampleRows.reduce((s, r) => s + (r[6] || 0), 0);
-  const summaryRows = [
-    [null, null, null, null, 'Total Assets Value', null, totalAssets, null, null, null, null, null],
-    [null, null, null, null, null, null, null, 'Category', null, 'Amount', null, null],
-    [null, null, null, null, null, null, null, 'Inventory - Reagent', 'B2B', sampleRows.filter(r=>r[10]==='Reagent'&&r[11]==='B2B').reduce((s,r)=>s+r[6],0), null, null],
-    [null, null, null, null, null, null, null, 'Inventory - Reagent', 'B2C', sampleRows.filter(r=>r[10]==='Reagent'&&r[11]==='B2C').reduce((s,r)=>s+r[6],0), null, null],
-    [null, null, null, null, null, null, null, 'Inventory - Calibrator', 'B2B', sampleRows.filter(r=>r[10]==='Calibrator').reduce((s,r)=>s+r[6],0), null, null],
-    [null, null, null, null, null, null, null, 'Inventory - Control (QC)', 'B2B', sampleRows.filter(r=>r[10]==='Control (QC Material)').reduce((s,r)=>s+r[6],0), null, null],
-    [null, null, null, null, null, null, null, 'Inventory - Consumables', 'B2B', sampleRows.filter(r=>r[10]==='Consumables').reduce((s,r)=>s+r[6],0), null, null],
-    [null, null, null, null, null, null, null, 'Total', null, totalAssets, null, null],
+  const totalAsset = data.reduce((s, r) => s + (r[6] || 0), 0);
+  const sum = (type, ch) => data.filter(r =>
+    (!type || r[10] === type) && (!ch || r[11] === ch)
+  ).reduce((s, r) => s + (r[6] || 0), 0);
+
+  // ── 실제 파일 하단 요약 구조 그대로 재현 ──
+  const summaryBlock = [
+    [N, N, N, N, 'Total Assets Value', N, totalAsset, N,           N,     N,          N, N],
+    [N, N, N, N, N,                    N, N,           N,           N,     N,          N, N],
+    [N, N, N, N, N,                    N, N,           'Category',  N,     'Amount',   N, N],
+    [N, N, N, N, N,                    N, N,           'Inventory - Reagent ',  'B2B', sum('reagent','B2B'),    N, N],
+    [N, N, N, N, N,                    N, N,           'Inventory - Lab supplies', 'B2B', sum('consumable','B2B'), N, N],
+    [N, N, N, N, N,                    N, N,           'Inventory - Reagent',   'B2C', sum('reagent','B2C'),    N, N],
+    [N, N, N, N, N,                    N, N,           'Inventory - Lab supplies ', 'B2C', sum('consumable','B2C'), N, N],
+    [N, N, N, N, N,                    N, N,           'Total',     N,     totalAsset, true, N],
+    [N, N, N, N, N,                    N, N,           N,           N,     0,          N, N],
+    [N, N, N, N, N,                    N, 'Reagent',   'reagent',   'B2B', sum('reagent','B2B'),   N, N],
+    [N, N, N, N, N,                    N, N,           'reagent',   'B2C', sum('reagent','B2C'),   N, N],
+    [N, N, N, N, N,                    N, N,           'control',   'B2B', sum('control','B2B'),   N, N],
+    [N, N, N, N, N,                    N, N,           'control',   'B2C', sum('control','B2C'),   N, N],
+    [N, N, N, N, N,                    N, N,           'calibrator','B2B', sum('Calibrator','B2B'),N, N],
+    [N, N, N, N, N,                    N, N,           'calibrator','B2C', sum('Calibrator','B2C'),N, N],
+    [N, N, N, N, N,                    N, N,           'Linearity', 'B2B', 0,          N, N],
+    [N, N, N, N, N,                    N, N,           'Linearity', 'B2C', 0,          N, N],
+    [N, N, N, N, N,                    N, 'Lab supplies','consumable','B2B',sum('consumable','B2B'),N,N],
+    [N, N, N, N, N,                    N, N,           'consumable','B2C', sum('consumable','B2C'),N, N],
+    [N, N, N, N, N,                    N, N,           'equipment', 'B2B', 0,          N, N],
+    [N, N, N, N, N,                    N, N,           'equipment', 'B2C', 0,          N, N],
+    [N, N, N, N, N,                    N, 'Total',     N,           N,     totalAsset, true, N],
+    [N, N, N, N, N,                    N, N,           N,           'B2C KIT', sum(null,'B2C'), N, N],
+    [N, N, N, N, N,                    N, N,           N,           'Total ', totalAsset, N, N],
   ];
 
-  const allRows = [titleRow, dateRow, emptyRow, headerRow, ...sampleRows, ...summaryRows];
+  const allRows = [
+    ['Inventory Valuation Summary', N, N, N, N, N, N, N, N, N, N, N],
+    [today,                         N, N, N, N, N, N, N, N, N, N, N],
+    [N, N, N, N, N, N, N, N, N, N, N, N],
+    ['Item Name','Item Description','Item SKU','Qty','UOM','Unit Cost','Asset Value','Item Tags','Department','Notes','Type','B2B/B2C'],
+    ...data,
+    [N, N, N, N, N, N, N, N, N, N, N, N], // 데이터 이후 빈 행
+    ...summaryBlock,
+  ];
+
   const ws = XLSX.utils.aoa_to_sheet(allRows);
-  ws['!cols'] = [28, 18, 12, 8, 8, 12, 14, 34, 10, 14, 24, 10].map(w => ({ wch: w }));
-
+  ws['!cols'] = [28,18,12,7,7,11,13,36,12,14,24,10].map(w => ({ wch: w }));
   XLSX.utils.book_append_sheet(wb, ws, 'Inventory Valuation Summary');
-
-  // ── 작성 가이드 시트 ──
-  const guide = XLSX.utils.aoa_to_sheet([
-    ['【Fishbowl 재고대장 작성 가이드】'],
-    [],
-    ['열(Column)', '내용', '예시', '필수'],
-    ['Item Name',        '품목명',                 'Anti-HCV Calibrator',       '필수'],
-    ['Item Description', '공급업체(Vendor)',        'Abbott',                    '권장'],
-    ['Item SKU',         'SKU 코드',               '1L79-01',                   '필수'],
-    ['Qty',              '현재 보유 수량',          '2',                         '필수'],
-    ['UOM',              '단위',                   'Each / Kit / Pack / Set',   '권장'],
-    ['Unit Cost',        '단가 (USD)',              '253.99',                    '필수'],
-    ['Asset Value',      '재고금액 (USD, Qty×Cost)','507.98',                   '자동계산'],
-    ['Item Tags',        '장비명 ||| 공급사',       'Architect i2000SR ||| Henry Schein', '권장'],
-    ['Department',       '부서',                   'Core / Lab',               '선택'],
-    ['Notes',            '비고',                   '',                          '선택'],
-    ['Type',             '품목 구분',              'Reagent / Calibrator / Control (QC Material) / Consumables', '필수'],
-    ['B2B/B2C',          '채널',                   'B2B / B2C',                '필수'],
-    [],
-    ['【주의사항】'],
-    ['- Row 1: "Inventory Valuation Summary" 고정'],
-    ['- Row 2: 보고 기준일 (YYYY-MM-DD)'],
-    ['- Row 3: 빈 행'],
-    ['- Row 4: 헤더 행 (위 컬럼명과 동일하게)'],
-    ['- Row 5~: 데이터 행 (Item SKU가 있는 행만 처리)'],
-    ['- 금액 단위: USD (시스템이 자동으로 KRW 환산 적용)'],
-    ['- 환율: 기본 1,350원/USD (Settings에서 변경 가능)'],
-  ]);
-  guide['!cols'] = [24, 24, 40, 10].map(w => ({ wch: w }));
-  XLSX.utils.book_append_sheet(wb, guide, '작성_가이드');
 
   download(wb, 'Fishbowl_재고대장_양식.xlsx');
 }
@@ -112,43 +178,79 @@ export function downloadPhysicalTemplate() {
 }
 
 export function downloadSKUMasterTemplate() {
-  // 4개 카테고리: Reagent / Calibrator / Control (QC Material) / Consumables
+  // 실제 파일 형식: *Item-Name | Item-Sku (첫 2컬럼) + 확장 컬럼 추가
   const headers = [
-    'SKU',
-    '품목명(Item Name)',
-    '구분(Reagent/Calibrator/Control(QC Material)/Consumables)',
-    '채널(B2B/B2C)',
-    '거래처(Vendor)',
-    '단위(Unit)',
+    '*Item-Name',
+    'Item-Sku',
+    'Type',
+    'B2B/B2C',
+    'Vendor',
+    'Department',
   ];
+  // 실제 파일과 동일하게: *Item-Name(col A), Item-Sku(col B) 순서 유지
+  // 컬럼 A=품목명, B=SKU, C=Type, D=B2B/B2C, E=Vendor, F=Department
   const rows = [
-    ['RG-001', 'PCR Master Mix',                   'Reagent',              'B2B', 'BioTech Co.',  'Kit'],
-    ['RG-002', 'RNA Extraction Kit',                'Reagent',              'B2B', 'GeneSys Inc.', 'Kit'],
-    ['HS-021', 'Multi-Chemistry Calibrator Set',    'Calibrator',           'B2B', 'Henry Schein', 'Set'],
-    ['HS-022', 'Immunoassay Calibrator Set',        'Calibrator',           'B2B', 'Henry Schein', 'Set'],
-    ['HS-026', 'Multi-Chemistry QC (3 levels)',     'Control (QC Material)','B2B', 'Henry Schein', 'Set'],
-    ['SG-019', 'Allplex™ STI Positive Control Set', 'Control (QC Material)','B2C', 'Seegene Inc.', 'Set'],
-    ['CS-001', 'Microcentrifuge Tubes 1.5ml',       'Consumables',          'B2B', 'LabSupply',    'Pack'],
-    ['CS-003', 'Pipette Tips 200ul',                'Consumables',          'B2C', 'TipMaster',    'Pack'],
+    // Calibrators (Abbott / Henry Schein)
+    ['Anti-HCV Calibrator',            '1L79-01',   'Calibrator',            'B2B', 'Abbott',        'Core'],
+    ['Anti-Tg Calibrator',             '2K46-01',   'Calibrator',            'B2B', 'Abbott',        'Core'],
+    ['Anti-TPO Calibrator',            '2K47-01',   'Calibrator',            'B2B', 'Abbott',        'Core'],
+    ['AUSAB Calibrator',               '1L82-02',   'Calibrator',            'B2B', 'Abbott',        'Core'],
+    ['BNP Calibrator',                 '8K28-04',   'Calibrator',            'B2B', 'Abbott',        'Core'],
+    ['HbA1c Calibrator Set',           'HS-024',    'Calibrator',            'B2B', 'Henry Schein',  'Core'],
+    ['CBC 5-Part Calibrator',          'HS-025',    'Calibrator',            'B2B', 'Henry Schein',  'Core'],
+    // Controls
+    ['Multi-Chemistry QC Low',         'HS-026A',   'control',               'B2B', 'Henry Schein',  'Core'],
+    ['Multi-Chemistry QC Normal',      'HS-026B',   'control',               'B2B', 'Henry Schein',  'Core'],
+    ['Multi-Chemistry QC High',        'HS-026C',   'control',               'B2B', 'Henry Schein',  'Core'],
+    ['Troponin QC Pack',               'HS-027',    'control',               'B2B', 'Henry Schein',  'Core'],
+    ['Allplex STI Positive Control',   'SG-019',    'control',               'B2C', 'Seegene Inc.',  'Core'],
+    // Reagents B2B
+    ['Troponin I HS Assay Kit',        'HS-010',    'reagent',               'B2B', 'Henry Schein',  'Core'],
+    ['Vitamin D (25-OH) Total',        'HS-009',    'reagent',               'B2B', 'Henry Schein',  'Core'],
+    ['D-Dimer Quantitative',           'HS-012',    'reagent',               'B2B', 'Henry Schein',  'Core'],
+    // Reagents B2C (Seegene STI)
+    ['Allplex STI Essential Panel',    'SG-001',    'reagent',               'B2C', 'Seegene Inc.',  'Core'],
+    ['Allplex STI Master Panel',       'SG-002',    'reagent',               'B2C', 'Seegene Inc.',  'Core'],
+    ['Allplex CT/NG Assay',            'SG-004',    'reagent',               'B2C', 'Seegene Inc.',  'Core'],
+    ['Allplex HPV HR Detection',       'SG-006',    'reagent',               'B2C', 'Seegene Inc.',  'Core'],
+    ['Allplex HBV Assay',              'SG-016',    'reagent',               'B2C', 'Seegene Inc.',  'Core'],
+    // Consumables (Lab supplies)
+    ['4mL K3E K3EDTA',                 'C-BCT-004', 'consumable',            'B2B', 'BD',            'Lab'],
+    ['21g Butterfly Needle',           '450095V1',  'consumable',            'B2B', 'BD',            'Lab'],
+    ['23g Butterfly Needle',           'C-NEE-005', 'consumable',            'B2B', 'BD',            'Lab'],
+    ['BD 2gal Sharps Container',       'C-OTH-012', 'consumable',            'B2B', 'BD',            'Lab'],
+    ['BD Sharps Collector 1.5qt',      'C-OTH-011', 'consumable',            'B2B', 'BD',            'Lab'],
+    ['Blood Culture Collection Kit',   'C-OTH-019', 'consumable',            'B2B', 'BD',            'Lab'],
+    ['Pipette Tips 200ul',             'CS-003',    'consumable',            'B2B', 'TipMaster',     'Lab'],
+    ['Microcentrifuge Tubes 1.5ml',    'CS-001',    'consumable',            'B2B', 'LabSupply',     'Lab'],
+    ['PCR Plates 96-well',             'CS-002',    'consumable',            'B2B', 'LabSupply',     'Lab'],
   ];
-  const ws = makeSheet(headers, rows, [12, 30, 40, 10, 18, 10]);
+  const ws = makeSheet(headers, rows, [36, 16, 24, 10, 18, 12]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'SKU_Master');
-  // 안내 시트 추가
+
+  // 작성 가이드 시트
   const guide = XLSX.utils.aoa_to_sheet([
-    ['【카테고리 입력 규칙】'],
-    ['구분', '입력값', '설명'],
-    ['시약', 'Reagent', 'PCR, ELISA, NGS, 진단 시약 등'],
-    ['캘리브레이터', 'Calibrator', '장비 보정용 캘리브레이터 세트'],
-    ['QC물질', 'Control (QC Material)', '정도관리 물질 (Positive/Negative Control)'],
-    ['소모품', 'Consumables', '튜브, 팁, 플레이트, PPE 등'],
+    ['【SKU Master 작성 가이드】'],
     [],
-    ['【채널 입력 규칙】'],
-    ['채널', '입력값'],
-    ['기관 판매', 'B2B'],
-    ['개인/병원 판매', 'B2C'],
+    ['열', '내용', '예시', '필수'],
+    ['*Item-Name', '품목명 (Fishbowl Item Name과 동일하게)', 'Anti-HCV Calibrator', '필수'],
+    ['Item-Sku',   'SKU 코드 (Fishbowl Item SKU와 동일하게)', '1L79-01',           '필수'],
+    ['Type',       '품목 구분', 'reagent / calibrator / control / consumable',      '권장'],
+    ['B2B/B2C',    '판매 채널', 'B2B / B2C',                                       '권장'],
+    ['Vendor',     '공급업체',  'Abbott / Henry Schein / Seegene Inc.',            '선택'],
+    ['Department', '부서',      'Core / Lab',                                      '선택'],
+    [],
+    ['【Type 입력값 (대소문자 무관)】'],
+    ['입력값',           '분류',                  '예시'],
+    ['reagent',          'Reagent (시약)',         'Allplex STI, Troponin Kit'],
+    ['calibrator',       'Calibrator (캘리브레이터)','Anti-HCV Calibrator'],
+    ['control',          'Control (QC Material)', 'Multi-Chemistry QC'],
+    ['consumable',       'Consumables (소모품)',   'Needles, Tubes, Tips'],
+    ['equipment',        'Consumables (소모품)',   '장비용품'],
+    ['Linearity',        'Calibrator',            '직선성 검증 물질'],
   ]);
-  guide['!cols'] = [25,30,35].map(w => ({ wch: w }));
+  guide['!cols'] = [20, 38, 36, 8].map(w => ({ wch: w }));
   XLSX.utils.book_append_sheet(wb, guide, '작성_가이드');
   download(wb, 'SKU_Master_양식.xlsx');
 }
@@ -169,9 +271,7 @@ export function downloadCostCategoryTemplate() {
 }
 
 export function downloadAllTemplates() {
-  downloadQBTemplate();
   downloadFishbowlTemplate();
-  downloadPhysicalTemplate();
+  downloadQBTemplate();
   downloadSKUMasterTemplate();
-  downloadCostCategoryTemplate();
 }

@@ -1,13 +1,28 @@
 import { useState } from 'react';
-import { Save, Plus, Trash2, Edit2, Upload } from 'lucide-react';
+import { Save, Plus, Trash2, Edit2, DollarSign, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
+const EXCHANGE_RATE = 1350;
+
+// 목표 원가율 30% 기준 기본 매출액 계산
+function defaultRevenue(totalUsage) {
+  return Math.round(totalUsage / EXCHANGE_RATE / 0.30);
+}
+
+function CostRateBadge({ rate }) {
+  const pct = (rate * 100).toFixed(1);
+  if (rate <= 0.30) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">✓ {pct}%</span>;
+  if (rate <= 0.35) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold">⚠ {pct}%</span>;
+  return <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-bold">↑ {pct}%</span>;
+}
+
 export default function SettingsTab() {
-  const { data } = useData();
+  const { data, revenueData, setMonthRevenue } = useData();
   const [skuList, setSkuList] = useState(data.skuMaster);
   const [catList, setCatList] = useState(data.costCategories || []);
-  const [activeSection, setActiveSection] = useState('sku');
+  const [activeSection, setActiveSection] = useState('revenue');
   const [saved, setSaved] = useState(false);
+  const [filterYear, setFilterYear] = useState('all');
 
   function handleSave() {
     setSaved(true);
@@ -27,12 +42,13 @@ export default function SettingsTab() {
         </button>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {[
-          { id: 'sku', label: 'SKU Master' },
-          { id: 'cost', label: 'Cost Categories' },
+          { id: 'revenue', label: '매출 관리 (Revenue)' },
+          { id: 'sku',     label: 'SKU Master' },
+          { id: 'cost',    label: 'Cost Categories' },
           { id: 'mapping', label: '매핑 규칙' },
-          { id: 'system', label: '시스템 설정' },
+          { id: 'system',  label: '시스템 설정' },
         ].map(({ id, label }) => (
           <button key={id} onClick={() => setActiveSection(id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeSection===id?'bg-indigo-600 text-white':'bg-[#1a2235] text-[#6b7a9a] hover:text-white'}`}>
@@ -40,6 +56,143 @@ export default function SettingsTab() {
           </button>
         ))}
       </div>
+
+      {/* ── Revenue Management ── */}
+      {activeSection === 'revenue' && (() => {
+        const summary = data.monthlySummary;
+        const years = [...new Set(summary.map(m => m.month.slice(0,4)))].sort();
+        const filtered = filterYear === 'all' ? summary : summary.filter(m => m.month.startsWith(filterYear));
+
+        // 전체 통계
+        const avgCostRate = filtered.length > 0
+          ? (filtered.reduce((s,m) => s + m.costRate, 0) / filtered.length * 100).toFixed(1)
+          : '—';
+        const totalRevUSD = filtered.reduce((s,m) => {
+          const override = revenueData[m.month];
+          return s + (override || defaultRevenue(m.totalUsage));
+        }, 0);
+
+        return (
+          <div className="space-y-4">
+            {/* 안내 배너 */}
+            <div className="flex items-start gap-3 p-3.5 bg-indigo-500/5 border border-indigo-500/20 rounded-xl">
+              <DollarSign size={16} className="text-indigo-400 shrink-0 mt-0.5" />
+              <div className="text-xs text-[#6b8ac4] leading-relaxed">
+                월별 매출액을 USD로 입력하면 원가율이 자동 계산됩니다. 비워두면 <strong className="text-indigo-300">30% 목표 원가율</strong> 기준 매출이 자동 적용됩니다.
+                <br/>환율: 1 USD = {EXCHANGE_RATE.toLocaleString()} KRW
+              </div>
+            </div>
+
+            {/* 요약 카드 */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-[#131720] border border-[#1e2638] rounded-xl p-3.5 text-center">
+                <div className="text-[#4b5a7a] text-[11px] mb-1">평균 원가율</div>
+                <div className={`font-bold text-lg ${parseFloat(avgCostRate) <= 30 ? 'text-emerald-400' : parseFloat(avgCostRate) <= 35 ? 'text-amber-400' : 'text-red-400'}`}>{avgCostRate}%</div>
+              </div>
+              <div className="bg-[#131720] border border-[#1e2638] rounded-xl p-3.5 text-center">
+                <div className="text-[#4b5a7a] text-[11px] mb-1">총 매출 (USD)</div>
+                <div className="font-bold text-lg text-white">${(totalRevUSD/1000).toFixed(0)}K</div>
+              </div>
+              <div className="bg-[#131720] border border-[#1e2638] rounded-xl p-3.5 text-center">
+                <div className="text-[#4b5a7a] text-[11px] mb-1">수정 완료 월</div>
+                <div className="font-bold text-lg text-indigo-400">{Object.keys(revenueData).length}개월</div>
+              </div>
+            </div>
+
+            {/* 연도 필터 */}
+            <div className="flex items-center gap-2">
+              <span className="text-[#4b5a7a] text-xs">연도:</span>
+              {['all', ...years].map(y => (
+                <button key={y} onClick={() => setFilterYear(y)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${filterYear===y?'bg-indigo-600 text-white':'bg-[#1a2235] text-[#6b7a9a] hover:text-white'}`}>
+                  {y === 'all' ? '전체' : `${y}년`}
+                </button>
+              ))}
+              <button onClick={() => {
+                filtered.forEach(m => setMonthRevenue(m.month, defaultRevenue(m.totalUsage)));
+              }} className="ml-auto px-3 py-1 bg-[#1a2235] hover:bg-[#1e2a42] border border-[#1e2638] text-[#6b8ac4] text-xs rounded-lg transition-colors">
+                선택 연도 30% 적용
+              </button>
+            </div>
+
+            {/* 월별 매출 입력 테이블 */}
+            <div className="bg-[#131720] border border-[#1e2638] rounded-xl overflow-hidden">
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-[#1e2638] bg-[#0f1117]">
+                      {['월 (Month)','재료비 (USD)','매출액 (USD) — 직접 입력','원가율 (%)','상태'].map(h => (
+                        <th key={h} className="text-left text-[#4b5a7a] font-medium px-4 py-3 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1a2235]">
+                    {filtered.map(m => {
+                      const materialUSD = Math.round(m.totalUsage / EXCHANGE_RATE);
+                      const defaultRev = defaultRevenue(m.totalUsage);
+                      const currentRev = revenueData[m.month] !== undefined ? revenueData[m.month] : defaultRev;
+                      const costRate = currentRev > 0 ? m.totalUsage / (currentRev * EXCHANGE_RATE) : m.costRate;
+                      const isModified = revenueData[m.month] !== undefined;
+
+                      return (
+                        <tr key={m.month} className={`hover:bg-[#1a2235]/50 transition-colors ${isModified ? 'bg-indigo-500/3' : ''}`}>
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-[#a0b0cc] font-medium">{m.month}</span>
+                            {isModified && <span className="ml-2 text-[9px] text-indigo-400 bg-indigo-500/10 px-1 py-0.5 rounded">수정됨</span>}
+                          </td>
+                          <td className="px-4 py-3 text-[#6b7a9a] font-mono">
+                            ${materialUSD.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#4b5a7a] text-[11px]">$</span>
+                              <input
+                                type="number"
+                                value={currentRev}
+                                onChange={e => setMonthRevenue(m.month, e.target.value)}
+                                className="w-32 bg-[#1a2235] border border-[#1e2638] text-[#a0b0cc] text-xs rounded-lg px-3 py-1.5 outline-none hover:border-indigo-500/40 focus:border-indigo-500 transition-colors font-mono"
+                                min="0"
+                                step="1000"
+                              />
+                              {isModified && (
+                                <button onClick={() => {
+                                  const next = {...revenueData};
+                                  delete next[m.month];
+                                  // setRevenueData를 직접 노출하지 않으므로 초기화는 기본값으로 재설정
+                                  setMonthRevenue(m.month, defaultRev);
+                                }} className="text-[#2d3a55] hover:text-amber-400 text-[10px] transition-colors" title="기본값(30%)으로 초기화">
+                                  ↩
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <CostRateBadge rate={costRate} />
+                          </td>
+                          <td className="px-4 py-3">
+                            {costRate <= 0.30
+                              ? <span className="text-emerald-400 text-[11px]">✓ 목표 달성</span>
+                              : costRate <= 0.35
+                                ? <span className="text-amber-400 text-[11px]">⚠ 주의</span>
+                                : <span className="text-red-400 text-[11px]">↑ 목표 초과</span>
+                            }
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="border-t border-[#1e2638] px-4 py-2 flex items-center gap-4 text-[11px] text-[#4b5a7a]">
+                <span>총 {filtered.length}개월</span>
+                <span className="text-emerald-400">✓ ≤30% 목표</span>
+                <span className="text-amber-400">⚠ 30~35% 주의</span>
+                <span className="text-red-400">↑ &gt;35% 초과</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {activeSection === 'sku' && (
         <div className="bg-[#131720] border border-[#1e2638] rounded-xl overflow-hidden">

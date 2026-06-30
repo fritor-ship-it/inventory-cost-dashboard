@@ -57,11 +57,12 @@ function showDownloadToast(filename) {
 }
 
 export function exportInventoryLedger(data, month) {
+  const toUSD = v => v ? Math.round(v / EXCHANGE_RATE) : 0;
   const rows = data.map(r => ({
-    '월': r.month, 'SKU': r.sku, '품목명': r.name,
-    '구분': r.category, '채널': r.channel,
-    '기초재고(원)': r.openingValue, '당월입고(원)': r.purchaseValue,
-    '기말재고(원)': r.closingValue, '사용액(원)': r.usageValue,
+    'Month': r.month, 'SKU': r.sku, 'Item Name': r.name,
+    'Category': r.category, 'Channel': r.channel,
+    'Opening($)': toUSD(r.openingValue), 'Purchase($)': toUSD(r.purchaseValue),
+    'Closing($)': toUSD(r.closingValue), 'Usage($)': toUSD(r.usageValue),
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [10,12,28,16,8,14,14,14,14].map(w=>({wch:w}));
@@ -71,16 +72,17 @@ export function exportInventoryLedger(data, month) {
 }
 
 export function exportCostAnalysis(summary) {
+  const toUSD = v => v ? Math.round(v / EXCHANGE_RATE) : 0;
   const rows = (summary || []).map(r => ({
-    '월': r.month,
-    '총사용액': r.totalUsage,
-    'B2B재료비': r.b2bUsage,
-    'B2C재료비': r.b2cUsage,
-    'Reagent재료비': r.reagentUsage,
-    'Consumable재료비': r.consumableUsage,
-    '매출액': r.revenue,
-    '원가율(%)': (r.costRate * 100).toFixed(2),
-    '전월대비(%)': r.costRateChange,
+    'Month': r.month,
+    'Total Usage($)': toUSD(r.totalUsage),
+    'B2B Usage($)': toUSD(r.b2bUsage),
+    'B2C Usage($)': toUSD(r.b2cUsage),
+    'Reagent($)': toUSD(r.reagentUsage),
+    'Consumable($)': toUSD(r.consumableUsage),
+    'Revenue($)': toUSD(r.revenue),
+    'Cost Rate(%)': (r.costRate * 100).toFixed(2),
+    'MoM Change(%)': r.costRateChange,
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [10,14,14,14,16,18,14,12,12].map(w=>({wch:w}));
@@ -102,12 +104,20 @@ export function exportExceptions(exceptions) {
   saveExcel(wb, '이상항목_리스트.xlsx');
 }
 
+// 환율: 1 USD = 1,350 KRW (내부 데이터는 KRW, 표시는 USD)
+const EXCHANGE_RATE = 1350;
+
 export function formatKRW(value) {
   if (!value && value !== 0) return '-';
-  if (Math.abs(value) >= 100000000) return `₩${(value / 100000000).toFixed(1)}억`;
-  if (Math.abs(value) >= 10000) return `₩${(value / 10000).toFixed(0)}만`;
-  return `₩${value.toLocaleString()}`;
+  const usd = value / EXCHANGE_RATE;
+  if (Math.abs(usd) >= 1000000) return `$${(usd / 1000000).toFixed(2)}M`;
+  if (Math.abs(usd) >= 1000)    return `$${(usd / 1000).toFixed(1)}K`;
+  if (Math.abs(usd) >= 1)       return `$${usd.toFixed(0)}`;
+  return `$${usd.toFixed(2)}`;
 }
+
+// alias
+export const formatUSD = formatKRW;
 
 export function formatNum(value, decimals = 0) {
   if (!value && value !== 0) return '-';

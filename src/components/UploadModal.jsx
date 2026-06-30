@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { X, Download, Upload, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, RefreshCw, PackageCheck } from 'lucide-react';
 import {
   downloadQBTemplate, downloadFishbowlTemplate,
@@ -58,7 +58,6 @@ export default function UploadModal({ onClose, targetMonth }) {
   const [files, setFiles] = useState({});
   const [status, setStatus] = useState('idle'); // idle | processing | done | error
   const [errorMsg, setErrorMsg] = useState('');
-  const refs = useRef({});
 
   const uploaded = Object.keys(files).length;
   // 필수 파일(4개)이 모두 업로드되면 분석 가능
@@ -154,40 +153,44 @@ export default function UploadModal({ onClose, targetMonth }) {
                   </button>
                 </div>
 
-                {/* 업로드 영역 */}
-                <div
-                  className="mx-4 mb-3 border border-dashed border-[#1e2638] rounded-lg px-3 py-2.5 cursor-pointer hover:border-[#2a3a5a] transition-colors"
+                {/* 업로드 영역 — label로 input 직접 연결 (모든 브라우저 호환) */}
+                <label
+                  htmlFor={`file-input-${id}`}
+                  className="mx-4 mb-3 border border-dashed border-[#1e2638] rounded-lg px-3 py-2.5 flex items-center gap-2 transition-colors hover:border-indigo-500/50 hover:bg-[#131720]/50"
+                  style={{ cursor: file ? 'default' : 'pointer', display: 'flex' }}
                   onDragOver={e => e.preventDefault()}
                   onDrop={e => { e.preventDefault(); handleFile(id, e.dataTransfer.files[0]); }}
-                  onClick={() => !file && refs.current[id]?.click()}
                 >
                   <input
-                    ref={el => refs.current[id] = el}
+                    id={`file-input-${id}`}
                     type="file"
                     accept=".xlsx,.xls,.csv"
                     className="hidden"
-                    onChange={e => handleFile(id, e.target.files[0])}
+                    onChange={e => { handleFile(id, e.target.files[0]); e.target.value = ''; }}
+                    onClick={e => e.stopPropagation()}
                   />
 
                   {file ? (
-                    <div className="flex items-center gap-2">
+                    <>
                       <CheckCircle size={14} className="text-emerald-400 shrink-0" />
                       <span className="text-emerald-400 text-xs flex-1 truncate">{file.name}</span>
                       <span className="text-[#4b5a7a] text-[11px] shrink-0">{(file.size / 1024).toFixed(1)} KB</span>
                       <button
-                        onClick={e => { e.stopPropagation(); removeFile(id); }}
+                        type="button"
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); removeFile(id); }}
                         className="text-[#3b4768] hover:text-red-400 ml-1 shrink-0"
                       >
                         <X size={12} />
                       </button>
-                    </div>
+                    </>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <Upload size={13} className="text-[#3b4768]" />
-                      <span className="text-[#2d3a55] text-xs">xlsx / xls / csv 드래그 또는 클릭</span>
-                    </div>
+                    <>
+                      <Upload size={13} className="text-[#4b5a7a] shrink-0" />
+                      <span className="text-[#4b5a7a] text-xs">클릭하여 파일 선택 또는 드래그&드롭</span>
+                      <span className="text-[#2d3a55] text-[10px] ml-auto shrink-0">xlsx · xls · csv</span>
+                    </>
                   )}
-                </div>
+                </label>
               </div>
             );
           })}

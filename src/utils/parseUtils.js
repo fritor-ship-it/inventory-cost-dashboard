@@ -36,6 +36,18 @@ function parseDate(v) {
   return null;
 }
 
+// ── 품목명으로 카테고리 자동 추론 (SKU Master에 Type 없을 때) ────────────
+function inferCategoryFromName(name) {
+  const v = name.toLowerCase();
+  if (v.includes('calibrator') || v.includes('calibration') || v.includes('linearity')) return 'Calibrator';
+  if (v.includes('control') || v.includes(' qc') || v.includes('positive control') || v.includes('ic set')) return 'Control (QC Material)';
+  if (v.includes('needle') || v.includes('tube') || v.includes('tips') || v.includes('tip')
+    || v.includes('glove') || v.includes('swab') || v.includes('container') || v.includes('mask')
+    || v.includes('plate') || v.includes('sharps') || v.includes('pipette') || v.includes('syringe')
+    || v.includes('flask') || v.includes('vial') || v.includes('bag') || v.includes('coat')) return 'Consumables';
+  return 'Reagent'; // kit, assay, panel, reagent 등 기본값
+}
+
 // ── 카테고리 파싱 (4개 체계) ──────────────────────────────────────────
 // 실제 Fishbowl Type 값: reagent / control / calibrator / Linearity / consumable / equipment / Lab supplies
 function parseCategory(raw) {
@@ -237,8 +249,10 @@ export async function parseSKUMaster(file) {
     return data.map(r => ({
       name:     toStr(r[0]),                   // *Item-Name
       sku:      toStr(r[1]),                   // Item-Sku
-      category: parseCategory(r[2]),           // Type (reagent/calibrator/control/consumable)
-      channel:  toStr(r[3]).toUpperCase().includes('B2B') ? 'B2B' : 'B2C',
+      // Type 컬럼 없으면 품목명으로 자동 감지
+      category: r[2] ? parseCategory(r[2]) : inferCategoryFromName(toStr(r[0])),
+      // B2B/B2C 컬럼 없으면 기본 B2B
+      channel:  r[3] ? (toStr(r[3]).toUpperCase().includes('B2B') ? 'B2B' : 'B2C') : 'B2B',
       vendor:   toStr(r[4]),                   // Vendor
       unit:     toStr(r[5]) || '',             // Department / Unit
     })).filter(r => r.sku && r.name);
@@ -366,6 +380,21 @@ export async function processUploadedFiles(files) {
   }
 
   if (finalSku.length === 0) throw new Error('SKU Master를 구성할 수 없습니다. Fishbowl 파일을 확인해 주세요.');
+
+  // SKU Master에 Type/채널 없으면 Fishbowl IVS 데이터로 보강
+  if (isFishbowlIVS && finalSku.length > 0) {
+    const fbMap = {};
+    fbRaw.forEach(r => { fbMap[r.sku] = r; fbMap[r.name] = r; }); // SKU 또는 이름으로 매핑
+    finalSku = finalSku.map(s => {
+      const fb = fbMap[s.sku] || fbMap[s.name];
+      return {
+        ...s,
+        category: (s.category && s.category !== 'Reagent') ? s.category : (fb?.category || s.category),
+        channel:  fb?.channel  || s.channel,
+        vendor:   s.vendor     || fb?.vendor || '',
+      };
+    });
+  }
 
   // 월 목록: QB + Fishbowl IVS 날짜 기준
   const monthSet = new Set([
